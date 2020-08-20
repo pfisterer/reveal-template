@@ -3,7 +3,7 @@ const fs = require('fs');
 module.exports.combined_pdf = function (package_json) {
 
 	let authorBlock = package_json.authors.map(entry => {
-		entry.shortname || entry.name || "unknown"
+		return entry.shortname || entry.name || "unknown"
 	}).join(" and ")
 
 	const combined_pdf_name = `${package_json.description} - ${authorBlock}`
