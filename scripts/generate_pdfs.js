@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 const connect = require('connect')
 const serveStatic = require('serve-static')
 const os = require('os');
@@ -16,7 +15,9 @@ const port = 1256
 const verbose = true
 
 const package_json = JSON.parse(fs.readFileSync('package.json'))
-const combined_pdf_name = `${package_json.description} - ${package_json.author}`
+
+let authorBlock = package_json.authors.map(entry => entry.name).join(" and ")
+const combined_pdf_name = `${package_json.description} - ${authorBlock}`
 	.replace(/[^\w- ]/gi, '') + ".pdf"
 
 const args = process.argv.slice(2);

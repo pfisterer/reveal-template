@@ -1,6 +1,10 @@
 # reveal-template
 
+## Installation
+
 Install using `npm install @farberg/reveal-template`
+
+## Usage
 
 Example:
 
@@ -29,3 +33,8 @@ Example:
 	</div>
 </body>
 ```
+
+## Publish a new version (maintainers only)
+
+- Bump version in `package.json`
+- Run `npm publish --access public`

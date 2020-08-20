@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 
 function pdf_exists_and_is_newer_than_markdown(markdownpath, pdfpath, verbose) {
