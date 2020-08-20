@@ -8,8 +8,8 @@ const structuredNameRegexp = new RegExp('(\\S+)\\s-\\s(.*)')
 const subchapterRegexp = new RegExp('([0-9]+)([a-zA-Z]+)')
 const pdf_folder = "__pdfs__"
 
+const package_json = JSON.parse(fs.readFileSync('package.json'))
 const combined_pdf_name = combined_pdf(package_json)
-
 
 const verbose = false
 
