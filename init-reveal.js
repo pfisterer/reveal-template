@@ -1,11 +1,11 @@
 // Built-in
-import Reveal from 'dist/reveal.esm.js';
-import RevealMarkdown from 'reveal.js/plugin/markdown/markdown.esm.js';
-import RevealHighlight from 'plugin/highlight/highlight.esm.js';
-import RevealSearch from 'plugin/search/search.esm.js';
-import RevealNotes from 'plugin/notes/notes.esm.js';
-import RevealMath from 'plugin/math/math.esm.js';
-import RevealZoom from 'plugin/zoom/zoom.esm.js';
+import Reveal from '../../reveal.js/dist/reveal.esm.js';
+import RevealMarkdown from '../../reveal.js/plugin/markdown/markdown.esm.js';
+import RevealHighlight from '../../reveal.js/plugin/highlight/highlight.esm.js';
+import RevealSearch from '../../reveal.js/plugin/search/search.esm.js';
+import RevealNotes from '../../reveal.js/plugin/notes/notes.esm.js';
+import RevealMath from '../../reveal.js/plugin/math/math.esm.js';
+import RevealZoom from '../../reveal.js/plugin/zoom/zoom.esm.js';
 
 // Dennis' plugins
 import ShowCodeSnippets from './plugins/reveal-plugin-show-code-snippets.js';
@@ -28,7 +28,7 @@ if (window.location.search.match(/print-pdf/gi)) {
 	document.getElementsByTagName('head')[0].appendChild(link);
 }
 
-export function initReveal(indexDocument) {
+export function initReveal(indexDocument, options) {
 	let doc = indexDocument
 	let decoded = decodeURI(window.location.search);
 	var match = decoded.match(/\?([\w\s-]+.md)/);
@@ -50,7 +50,7 @@ export function initReveal(indexDocument) {
 	slidesEl.appendChild(mdel)
 
 	window.addEventListener('load', (event) => {
-		Reveal.initialize({
+		Reveal.initialize(Object.assign({
 			// Display controls in the bottom right corner
 			controls: false,
 			// Display a presentation progress bar
@@ -85,7 +85,7 @@ export function initReveal(indexDocument) {
 			/*Dennis' plugins: */ ShowCodeSnippets, ShowAttribution, ShowToc, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin
 			],
 
-		});
+		}, options));
 	});
 
 }
