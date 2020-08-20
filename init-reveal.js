@@ -28,7 +28,7 @@ if (window.location.search.match(/print-pdf/gi)) {
 	document.getElementsByTagName('head')[0].appendChild(link);
 }
 
-export function initReveal(indexDocument, options) {
+export function initReveal(indexDocument, options, extraPlugins) {
 	let doc = indexDocument
 	let decoded = decodeURI(window.location.search);
 	var match = decoded.match(/\?([\w\s-]+.md)/);
@@ -82,7 +82,8 @@ export function initReveal(indexDocument, options) {
 			margin: 0.05,
 			plugins: [
 			/* Built-in: */ RevealMarkdown, RevealHighlight, RevealSearch, RevealNotes, RevealMath, RevealZoom,
-			/*Dennis' plugins: */ ShowCodeSnippets, ShowAttribution, ShowToc, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin
+			/*Dennis' plugins: */ ShowCodeSnippets, ShowAttribution, ShowToc, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin,
+			/* Extra ones */ ...(extraPlugins || [])
 			],
 
 		}, options));
