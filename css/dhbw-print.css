@@ -1,0 +1,16 @@
+.attribution {
+  visibility: hidden;
+}
+
+credits {
+	visibility: visible;
+  font-size: 12px;
+  text-align: left;
+  position: absolute;
+  left: 12px;
+  top: 690px;
+}
+
+.reveal .slides {
+	pointer-events: initial !important;	
+}
