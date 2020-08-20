@@ -16,7 +16,7 @@ const verbose = true
 
 const package_json = JSON.parse(fs.readFileSync('package.json'))
 
-let authorBlock = package_json.authors.map(entry => entry.name).join(" and ")
+let authorBlock = package_json.authors.map(entry => entry.shortname).join(" and ")
 const combined_pdf_name = `${package_json.description} - ${authorBlock}`
 	.replace(/[^\w- ]/gi, '') + ".pdf"
 
