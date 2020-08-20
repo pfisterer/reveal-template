@@ -46,7 +46,7 @@ function convert_md_to_pdf(url, pdf_dir, pdf_name) {
 		"--load-pause", "2000",
 		"--pause", "500",
 		"-s", "1200x800",
-		"reveal",
+		"automatic",
 		url,
 		`/slides/${pdf_name}`]
 
