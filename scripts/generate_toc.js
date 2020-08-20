@@ -41,7 +41,7 @@ for (let f of md_files) {
 		let a2 = isSubchapter ? sn2[2] : ""
 
 		let b = `<a href='./?${f}'>${sn[2]}</a>`
-		let p = `<a href='./${pdf_folder + "/" + encodeURIComponent(basename) + ".pdf"} '>  <img src="reveal/pdf-symbol.svg" style="height: 0.7em; margin: 0;"> </a>`
+		let p = `<a href='./${pdf_folder + "/" + encodeURIComponent(basename) + ".pdf"} '>  <img src="node_modules/@farberg/reveal-template/img/pdf-symbol.svg" style="height: 0.7em; margin: 0;"> </a>`
 
 		let usePrinterSymbol = true
 		let c = `<a href='./?${f}/print-pdf'>printable</a>`
