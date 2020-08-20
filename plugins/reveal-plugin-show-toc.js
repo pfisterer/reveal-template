@@ -7,6 +7,8 @@ function showToc(url, el) {
 
 export default () => {
 
+	// Integrate functionality similar to https://raw.githubusercontent.com/naamor/reveal.js-tableofcontents/master/tableofcontents.js
+
 	return {
 		id: 'show_toc',
 		init: (deck) => {
