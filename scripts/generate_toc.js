@@ -30,7 +30,7 @@ for (let f of md_files) {
 	let basename = path.basename(f, ".md");
 
 	let pdf_available = pdf_exists_and_is_newer_than_markdown(f, path.join(pdf_folder, `${basename}.pdf`), verbose)
-	let printlink = `<a href='./?${f}/print-pdf'> <img src="reveal/printer-symbol.svg" style="height: 0.7em; margin: 0;"> </a>`
+	let printlink = `<a href='./?${f}/print-pdf'> <img src="node_modules/@farberg/reveal-template/img/printer-symbol.svg" style="height: 0.7em; margin: 0;"> </a>`
 
 	if (generateTable) {
 		let sn = structuredNameRegexp.exec(basename)

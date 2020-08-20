@@ -1,3 +1,4 @@
+
 function showLinkToSlidesAndQrCode(deck, url) {
 	if (url === undefined)
 		return
@@ -21,12 +22,15 @@ export default () => {
 	return {
 		id: 'show_qr_code',
 		init: (deck) => {
-
 			deck.on('ready', () => {
-				fetch("package.json")
-					.then(res => res.json())
-					.then(json => showLinkToSlidesAndQrCode(deck, json.homepage))
-					.catch(err => console.log("Error fetching package.json", err))
+				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json
+				if (info_json_url)
+					fetch(info_json_url.href)
+						.then(res => res.json())
+						.then(json => showLinkToSlidesAndQrCode(deck, json.homepage))
+						.catch(err => console.log("Error fetching info json", err))
+				else
+					console.log("show_qr_code: no URL available @ farberg_reveal_template.info_json")
 
 			})
 		}
