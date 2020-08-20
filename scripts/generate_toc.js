@@ -2,15 +2,14 @@
 
 const path = require('path');
 const fs = require('fs');
-const pdf_exists_and_is_newer_than_markdown = require('./pdf_exists_and_is_newer_than_markdown.js')
+const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
 
 const structuredNameRegexp = new RegExp('(\\S+)\\s-\\s(.*)')
 const subchapterRegexp = new RegExp('([0-9]+)([a-zA-Z]+)')
 const pdf_folder = "__pdfs__"
 
-const package_json = JSON.parse(fs.readFileSync('package.json'))
-const combined_pdf_name = `${package_json.description} - ${package_json.author}`
-	.replace(/[^\w- ]/gi, '') + ".pdf"
+const combined_pdf_name = combined_pdf(package_json)
+
 
 const verbose = false
 

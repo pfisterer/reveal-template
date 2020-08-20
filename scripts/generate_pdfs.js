@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const pdf_exists_and_is_newer_than_markdown = require('./pdf_exists_and_is_newer_than_markdown.js')
+const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
 
 const cwd = process.cwd()
 const slides_dir = cwd
@@ -16,9 +16,7 @@ const verbose = true
 
 const package_json = JSON.parse(fs.readFileSync('package.json'))
 
-let authorBlock = package_json.authors.map(entry => entry.shortname).join(" and ")
-const combined_pdf_name = `${package_json.description} - ${authorBlock}`
-	.replace(/[^\w- ]/gi, '') + ".pdf"
+const combined_pdf_name = combined_pdf(package_json)
 
 const args = process.argv.slice(2);
 

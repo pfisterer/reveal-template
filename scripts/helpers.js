@@ -1,6 +1,18 @@
 const fs = require('fs');
 
-function pdf_exists_and_is_newer_than_markdown(markdownpath, pdfpath, verbose) {
+module.exports.combined_pdf = function (package_json) {
+
+	let authorBlock = package_json.authors.map(entry => {
+		entry.shortname || entry.name || "unknown"
+	}).join(" and ")
+
+	const combined_pdf_name = `${package_json.description} - ${authorBlock}`
+		.replace(/[^\w- ]/gi, '') + ".pdf"
+
+	return combined_pdf_name
+}
+
+module.exports.pdf_exists_and_is_newer_than_markdown = function (markdownpath, pdfpath, verbose) {
 	let md_exists = fs.existsSync(markdownpath)
 	let pdf_exists = fs.existsSync(pdfpath)
 	if (!pdf_exists || !md_exists) {
@@ -28,5 +40,3 @@ function pdf_exists_and_is_newer_than_markdown(markdownpath, pdfpath, verbose) {
 	}
 	return true
 }
-
-module.exports = pdf_exists_and_is_newer_than_markdown
