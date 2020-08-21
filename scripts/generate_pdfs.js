@@ -73,6 +73,7 @@ console.log(`Listening on port ${port}, running in ${cwd}`);
 let md_files = fs.readdirSync(".")
 	.filter(file => path.extname(file).toLowerCase() === ".md")
 	.filter(file => !path.basename(file, ".md").startsWith("__"))
+	.filter(file => !path.basename(file, ".md") === "README")
 
 //Spawn processes to create PDFs
 let processes = []
