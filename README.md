@@ -27,7 +27,9 @@ Example:
 		<div class="slides">
 			<script type="module">
 				import { initReveal } from 'node_modules/@farberg/reveal-template/init-reveal.js'
-				initReveal("00 - Introduction.md", { "farberg_reveal_template": { "info_json": new URL('package.json', window.location) } });
+				const extraRevealOptions = {}
+				const extraRevealPlugins = []
+				initReveal("00 - Introduction.md", extraRevealOptions, extraRevealPlugins);
 			</script>
 		</div>
 	</div>

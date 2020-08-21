@@ -31,7 +31,7 @@ export default () => {
 		id: 'show_title',
 		init: (deck) => {
 			deck.on('ready', () => {
-				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json
+				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json || new URL('package.json', window.location)
 				if (info_json_url)
 					fetch(info_json_url.href)
 						.then(response => response.json())
