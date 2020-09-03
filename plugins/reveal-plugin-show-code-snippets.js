@@ -63,12 +63,13 @@ export default () => {
 					//console.log(`language = ${ language }, url = ${ url }, beginMarker = ${ beginMarker }, endMarker = ${ endMarker }, showLink = ${ showLink } `)
 
 					if (url) {
-						fetch(url).then(response => response.text()).then(text => {
-							let code = extractBeginEndSnippet(text, beginMarker, endMarker)
-							showCode(el, language, code, showLink ? url : null)
-						}).catch(err => {
-							showError(el, err)
-						})
+						fetch(url, { "cache": "no-store" })
+							.then(response => response.text()).then(text => {
+								let code = extractBeginEndSnippet(text, beginMarker, endMarker)
+								showCode(el, language, code, showLink ? url : null)
+							}).catch(err => {
+								showError(el, err)
+							})
 					} else {
 						showError(el, "No URL provided in elements innerText")
 					}

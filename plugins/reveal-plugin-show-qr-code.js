@@ -25,7 +25,7 @@ export default () => {
 			deck.on('ready', () => {
 				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json || new URL('package.json', window.location)
 				if (info_json_url)
-					fetch(info_json_url.href)
+					fetch(info_json_url.href, { "cache": "no-store" })
 						.then(res => res.json())
 						.then(json => showLinkToSlidesAndQrCode(deck, json.homepage))
 						.catch(err => console.log("Error fetching info json", err))
