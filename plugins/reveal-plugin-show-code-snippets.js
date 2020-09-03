@@ -14,7 +14,6 @@ function showCode(el, language, code, link) {
 	newEl.appendChild(codeEl)
 
 	el.parentNode.replaceChild(newEl, el);
-	RevealHighlight().hljs.highlightBlock(newEl)
 
 	if (link) {
 		let linkNode = document.createElement("div");
@@ -22,6 +21,8 @@ function showCode(el, language, code, link) {
 		linkNode.innerHTML = `<a href = "${link}" > ${link}</a >`
 		newEl.parentNode.insertBefore(linkNode, newEl.nextSibling);
 	}
+
+	return newEl
 }
 
 function extractBeginEndSnippet(code, beginMarker, endMarker) {
@@ -52,6 +53,8 @@ export default () => {
 		init: (deck) => {
 
 			deck.on('ready', () => {
+				const highlightPlugin = deck.getPlugin("highlight")
+
 				for (let el of deck.getRevealElement().querySelectorAll("a[data-code]")) {
 					//console.log(`Loading code snippets, looking at`, el)
 					let language = el.getAttribute("data-code");
@@ -60,13 +63,14 @@ export default () => {
 					let endMarker = el.getAttribute("data-end")
 					let showLink = el.hasAttribute("data-link")
 
-					//console.log(`language = ${ language }, url = ${ url }, beginMarker = ${ beginMarker }, endMarker = ${ endMarker }, showLink = ${ showLink } `)
+					//console.log(`language = ${language}, url = ${url}, beginMarker = ${beginMarker}, endMarker = ${endMarker}, showLink = ${showLink} `)
 
 					if (url) {
 						fetch(url, { "cache": "no-store" })
 							.then(response => response.text()).then(text => {
 								let code = extractBeginEndSnippet(text, beginMarker, endMarker)
-								showCode(el, language, code, showLink ? url : null)
+								const newEl = showCode(el, language, code, showLink ? url : null)
+								highlightPlugin.highlightBlock(newEl)
 							}).catch(err => {
 								showError(el, err)
 							})
