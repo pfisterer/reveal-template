@@ -17,7 +17,7 @@ module.exports.pdf_exists_and_is_newer_than_markdown = function (markdownpath, p
 	let pdf_exists = fs.existsSync(pdfpath)
 	if (!pdf_exists || !md_exists) {
 		if (verbose)
-			console.error(`pdf_exists = ${pdf_exists}, markdown_exists= ${md_exists}`)
+			console.error(`pdf_exists = ${pdf_exists}, markdown_exists= ${md_exists}, pdf = ${pdfpath}, markdown = ${markdownpath}`)
 		return false
 	}
 
