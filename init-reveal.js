@@ -50,7 +50,9 @@ export function initReveal(indexDocument, options, extraPlugins) {
 	slidesEl.appendChild(mdel)
 
 	window.addEventListener('load', (event) => {
+		window.Reveal = Reveal
 		Reveal.initialize(Object.assign({
+			embedded: false,
 			// Display controls in the bottom right corner
 			controls: false,
 			// Display a presentation progress bar
