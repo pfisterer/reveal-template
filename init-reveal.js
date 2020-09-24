@@ -84,7 +84,7 @@ export function initReveal(indexDocument, options, extraPlugins) {
 			margin: 0.05,
 			plugins: [
 			/* Built-in: */ RevealMarkdown, RevealHighlight, RevealSearch, RevealNotes, RevealMath, RevealZoom,
-			/*Dennis' plugins: */ ShowCodeSnippets, ShowAttribution, ShowToc, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin,
+			/*Dennis' plugins: */ ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin,
 			/* Extra ones */ ...(extraPlugins || [])
 			],
 

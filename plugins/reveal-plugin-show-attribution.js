@@ -11,7 +11,7 @@ function showAttributionOnSlide(slide) {
 		creditsText = currentCredits.innerHTML;
 	}
 
-	//console.log("Setting credits to" + creditsText);
+	console.log("Setting credits to", creditsText);
 	if ("" !== creditsText)
 		creditsTag.innerHTML = "<span>" + creditsText + "</span>";
 	else
@@ -23,6 +23,14 @@ export default () => {
 	return {
 		id: 'show_attribution',
 		init: (deck) => {
+			let observer = new MutationObserver(() => {
+				showAttributionOnSlide(deck.getCurrentSlide())
+			})
+
+			function monitor(target) {
+				observer.disconnect()
+				observer.observe(target, { subtree: true, childList: true, characterData: true })
+			}
 
 			deck.on('ready', () => {
 				var credits = document.createElement("attribution");
@@ -30,8 +38,10 @@ export default () => {
 				deck.getRevealElement().appendChild(credits);
 
 				showAttributionOnSlide(deck.getCurrentSlide())
+				monitor(deck.getCurrentSlide())
 
 				deck.addEventListener('slidechanged', function (event) {
+					monitor(event.currentSlide)
 					showAttributionOnSlide(event.currentSlide)
 				})
 
