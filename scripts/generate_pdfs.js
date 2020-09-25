@@ -161,7 +161,7 @@ function run_todos(todos, maxProcessesRunning) {
 			const running_processes = todos.filter(todo => todo.process && todo.process.exitCode == null)
 			const waiting_processes = todos.filter(todo => !todo.process)
 
-			console.log(`Running ${running_processes.length}, waiting ${waiting_processes.length}`)
+			//console.log(`Running ${running_processes.length}, waiting ${waiting_processes.length}`)
 			//console.log("todos_that_require_action", todos_that_require_action); console.log("running_processes", running_processes); console.log("waiting_processes", waiting_processes);
 
 			if (running_processes.length < maxProcessesRunning && waiting_processes.length > 0) {

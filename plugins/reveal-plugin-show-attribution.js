@@ -11,7 +11,7 @@ function showAttributionOnSlide(slide) {
 		creditsText = currentCredits.innerHTML;
 	}
 
-	console.log("Setting credits to", creditsText);
+	//console.log("Setting credits to", creditsText);
 	if ("" !== creditsText)
 		creditsTag.innerHTML = "<span>" + creditsText + "</span>";
 	else
