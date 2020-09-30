@@ -1,0 +1,12 @@
+{
+	"title": "Some example title",
+	"description": "Some description",
+	"homepage": "https://pfisterer.github.io/reveal-template/cdn.html",
+	"authors": [
+		{
+			"name": "Dennis Pfisterer",
+			"shortname": "Pfisterer",
+			"homepage": "https://dennis-pfisterer.de"
+		}
+	]
+}
