@@ -41,56 +41,11 @@ Some text
 
 ### Using npm (`npm install @farberg/reveal-template`)
 
-```html
-<html>
-
-<head>
-	<meta charset="utf-8">
-	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, minimal-ui">
-
-	<link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
-	<link rel="stylesheet" href="node_modules/reveal.js/plugin/highlight/zenburn.css">
-	<link rel="stylesheet" href="node_modules/@farberg/reveal-template/css/dhbw.css" id="theme">
-
-	<script type="module">
-		import { initReveal } from 'node_modules/@farberg/reveal-template/init-reveal.js'
-		initReveal("00 - Introduction.md");
-	</script>
-</head>
-
-<body>
-	<div class="reveal"><div class="slides"></div></div>
-</body>
-```
+See <demo/npm.html> for an example.
 
 ### Using a CDN
 
-```html
-<html>
-
-<head>
-	<meta charset="utf-8">
-	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, minimal-ui">
-
-	<link rel="stylesheet" href="https://unpkg.com/reveal.js/dist/reveal.css">
-	<link rel="stylesheet" href="https://unpkg.com/reveal.js/plugin/highlight/zenburn.css">
-	<link rel="stylesheet" href="https://unpkg.com/@farberg/reveal-template/css/dhbw.css" id="theme">
-	
-	<script type="module">
-		import { initReveal } from 'https://unpkg.com/@farberg/reveal-template/init-reveal.js'
-		const revealPath = "https://unpkg.com/reveal.js/"
-		initReveal("00 - Introduction.md", null, null, null, revealPath);
-	</script>
-</head>
-
-<body>
-	<div class="reveal"> <div class="slides"></div></div>
-</body>
-```
+See <demo/cdn.html> for an example ([see the result here](https://htmlpreview.github.io/?https://github.com/pfisterer/reveal-template/demo/cdn.html))
 
 ## Publish a new version (maintainers only)
 
