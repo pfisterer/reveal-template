@@ -41,11 +41,11 @@ Some text
 
 ### Using npm (`npm install @farberg/reveal-template`)
 
-See <demo/npm.html> for an example.
+See <docs/npm.html> for an example.
 
 ### Using a CDN
 
-See <demo/cdn.html> for an example ([see the result here](https://htmlpreview.github.io/?https://github.com/pfisterer/reveal-template/demo/cdn.html))
+See <docs/>cdn.html> for an example ([see the result here](https://htmlpreview.github.io/?https://github.com/pfisterer/reveal-template/demo/cdn.html))
 
 ## Publish a new version (maintainers only)
 
