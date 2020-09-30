@@ -7,8 +7,8 @@ Install using `npm install @farberg/reveal-template`
 ## Usage
 
 1. Create a file `package.json` describing your presentation (e.g., [like this one)](docs/package.json).
-1. Create your Presentation in Markdown (`00 - Introduction.md` in the examples below, see [this file](docs/00 - Introduction.md) for an example).
-2. Create an HTML file (e.g., index.html)
+2. Create your Presentation in Markdown (`00 - Introduction.md` in the examples below, see <a href="docs/00 - Introduction.md">this file</a> for an example).
+3. Create an HTML file (e.g., index.html)
    - Using npm (`npm install @farberg/reveal-template`), see [npm.html](docs/npm.html) for an example.
    - Using a CDN, see [cdn.html](docs/cdn.html) for an example ([see the published result here](https://pfisterer.github.io/reveal-template/cdn.html))
 
