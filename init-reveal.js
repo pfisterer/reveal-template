@@ -1,12 +1,3 @@
-// Built-in
-import Reveal from '../../reveal.js/dist/reveal.esm.js';
-import RevealMarkdown from '../../reveal.js/plugin/markdown/markdown.esm.js';
-import RevealHighlight from '../../reveal.js/plugin/highlight/highlight.esm.js';
-import RevealSearch from '../../reveal.js/plugin/search/search.esm.js';
-import RevealNotes from '../../reveal.js/plugin/notes/notes.esm.js';
-import RevealMath from '../../reveal.js/plugin/math/math.esm.js';
-import RevealZoom from '../../reveal.js/plugin/zoom/zoom.esm.js';
-
 // Dennis' plugins
 import ShowCodeSnippets from './plugins/reveal-plugin-show-code-snippets.js';
 import ShowAttribution from './plugins/reveal-plugin-show-attribution.js';
@@ -28,67 +19,87 @@ if (window.location.search.match(/print-pdf/gi)) {
 	document.getElementsByTagName('head')[0].appendChild(link);
 }
 
-export function initReveal(indexDocument, options, extraPlugins) {
-	let doc = indexDocument
-	let decoded = decodeURI(window.location.search);
-	var match = decoded.match(/\?([\w\s-]+.md)/);
+function loadRevealAndPlugins(revealPath) {
+	const imports = ["dist/reveal.esm.js" /*must be the first one*/, "plugin/markdown/markdown.esm.js", "plugin/highlight/highlight.esm.js", "plugin/search/search.esm.js", "plugin/notes/notes.esm.js", "plugin/math/math.esm.js", "plugin/zoom/zoom.esm.js"]
 
-	if (match && match[1]) {
-		doc = match[1];
-	} else {
-		window.location.href = '?' + indexDocument + window.location.hash;
-	}
+	return Promise.all(imports.map(i => import(revealPath + "/" + i)))
+}
 
-	// Create a section to load the markdown contents
-	let mdel = document.createElement("section");
-	mdel.setAttribute("data-markdown", doc)
-	mdel.setAttribute("data-separator", "^---")
-	mdel.setAttribute("data-separator-vertical", "^vvv")
-	mdel.setAttribute("data-charset", "utf-8")
+function windowOnLoadPromise() {
+	return new Promise((resolve, reject) => {
+		window.addEventListener('load', () => resolve())
+	})
+}
 
-	let slidesEl = document.querySelector("body div.reveal div.slides")
-	slidesEl.appendChild(mdel)
+export function initReveal(indexDocument, options, extraPlugins, slidesDestinationElement, revealPath) {
+	//Wait until window is loaded and reveal imports have loaded
+	Promise.all([loadRevealAndPlugins(revealPath || "../../reveal.js/"), windowOnLoadPromise()])
+		.catch(error => {
+			console.error("Unable to load dependencies: ", error);
+		})
+		.then(values => {
+			//Get the first element from the array, this is the Reveal module
+			const modules = values[0].map(m => m.default)
+			const Reveal = modules.shift();
 
-	window.addEventListener('load', (event) => {
-		window.Reveal = Reveal
-		Reveal.initialize(Object.assign({
-			embedded: false,
-			// Display controls in the bottom right corner
-			controls: false,
-			// Display a presentation progress bar
-			progress: true,
-			// Display the page number of the current slide
-			slideNumber: true,
-			// Push each slide change to the browser history
-			history: true,
-			// none/fade/slide/convex/concave/zoom
-			transition: 'slide',
-			// Transition speed // default/fast/slow
-			transitionSpeed: 'default',
-			// Vertical centering of slides
-			center: false,
-			//Markdown config
-			markdown: {
-				smartypants: true,
-			},
-			keyboard: {
-				33: function () { Reveal.left(); }, // Don't go up using the presenter
-				34: function () { Reveal.right(); }, // Don't go down using the presenter
-				65  /* a */: function () { window.location.assign("./#/agenda") }, //Go to the agenda
-			},
-			// Bounds for smallest/largest possible scale to apply to content
-			minScale: 0.1,
-			maxScale: 3,
+			const decoded = decodeURI(window.location.search);
+			const match = decoded.match(/\?([\w\s-]+.md)/);
 
-			// Factor of the display size that should remain empty around the content
-			margin: 0.05,
-			plugins: [
-			/* Built-in: */ RevealMarkdown, RevealHighlight, RevealSearch, RevealNotes, RevealMath, RevealZoom,
-			/*Dennis' plugins: */ ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin,
-			/* Extra ones */ ...(extraPlugins || [])
-			],
+			if (match && match[1]) {
+				indexDocument = match[1];
+			} else {
+				window.location.href = '?' + indexDocument + window.location.hash;
+			}
 
-		}, options));
-	});
+			// Create a section to load the markdown contents
+			const mdel = document.createElement("section");
+			mdel.setAttribute("data-markdown", indexDocument)
+			mdel.setAttribute("data-separator", "^---")
+			mdel.setAttribute("data-separator-vertical", "^vvv")
+			mdel.setAttribute("data-charset", "utf-8")
+
+			const slidesEl = slidesDestinationElement || document.querySelector("body div.reveal div.slides")
+			slidesEl.appendChild(mdel)
+
+			window.Reveal = Reveal
+			Reveal.initialize(Object.assign({
+				embedded: false,
+				// Display controls in the bottom right corner
+				controls: false,
+				// Display a presentation progress bar
+				progress: true,
+				// Display the page number of the current slide
+				slideNumber: true,
+				// Push each slide change to the browser history
+				history: true,
+				// none/fade/slide/convex/concave/zoom
+				transition: 'slide',
+				// Transition speed // default/fast/slow
+				transitionSpeed: 'default',
+				// Vertical centering of slides
+				center: false,
+				//Markdown config
+				markdown: {
+					smartypants: true,
+				},
+				keyboard: {
+					33: function () { Reveal.left(); }, // Don't go up using the presenter
+					34: function () { Reveal.right(); }, // Don't go down using the presenter
+					65  /* a */: function () { window.location.assign("./#/agenda") }, //Go to the agenda
+				},
+				// Bounds for smallest/largest possible scale to apply to content
+				minScale: 0.1,
+				maxScale: 3,
+
+				// Factor of the display size that should remain empty around the content
+				margin: 0.05,
+				plugins: [
+					/* Built-in: */ ...modules,
+					/*Dennis' plugins: */ ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin,
+					/* Extra ones */ ...(extraPlugins || [])
+				],
+
+			}, options));
+		})
 
 }
