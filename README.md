@@ -14,5 +14,10 @@ Install using `npm install @farberg/reveal-template`
 
 ## Publish a new version (maintainers only)
 
-- Bump version in `package.json`
-- Run `npm publish --access public`
+```bash
+# Bump version in `package.json`
+
+# Run this command to publish on npm
+
+npm publish --access public
+```
