@@ -34,7 +34,7 @@ function extractBeginEndSnippet(code, beginMarker, endMarker) {
 		if (line.indexOf(beginMarker) >= 0) {
 			beginFound = true;
 			continue;
-		} else if (line.indexOf(endMarker) >= 0) {
+		} else if (beginFound && line.indexOf(endMarker) >= 0) {
 			break;
 		} else if (!beginFound) {
 			continue;
