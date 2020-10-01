@@ -31,10 +31,10 @@ function extractBeginEndSnippet(code, beginMarker, endMarker) {
 	let beginFound = beginMarker ? false : true
 
 	for (let line of lines) {
-		if (line === beginMarker) {
+		if (line.indexOf(beginMarker) >= 0) {
 			beginFound = true;
 			continue;
-		} else if (line === endMarker) {
+		} else if (line.indexOf(endMarker)) {
 			break;
 		} else if (!beginFound) {
 			continue;
