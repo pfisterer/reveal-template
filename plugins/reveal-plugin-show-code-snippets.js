@@ -29,7 +29,8 @@ function extractBeginEndSnippet(code, beginMarker, endMarker) {
 	let lines = code.split('\n');
 	let out = "";
 	let beginFound = beginMarker ? false : true
-	beginMarker = beginMarker.trim()
+	beginMarker = beginMarker ? beginMarker.trim() : null
+
 	for (let line of lines) {
 		if (line.indexOf(beginMarker) >= 0) {
 			beginFound = true;
