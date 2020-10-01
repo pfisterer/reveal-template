@@ -29,12 +29,12 @@ function extractBeginEndSnippet(code, beginMarker, endMarker) {
 	let lines = code.split('\n');
 	let out = "";
 	let beginFound = beginMarker ? false : true
-
+	beginMarker = beginMarker.trim()
 	for (let line of lines) {
 		if (line.indexOf(beginMarker) >= 0) {
 			beginFound = true;
 			continue;
-		} else if (line.indexOf(endMarker)) {
+		} else if (line.indexOf(endMarker) >= 0) {
 			break;
 		} else if (!beginFound) {
 			continue;
