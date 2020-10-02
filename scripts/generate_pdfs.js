@@ -76,15 +76,6 @@ function spawn_merge_to_single_pdf(pdfs, pdf, pdf_dir) {
 	return spawn(cmd, args)
 }
 
-function updateModificationTime(file) {
-	if (fs.existsSync(file)) {
-		const time = new Date();
-		fs.utimesSync(file, time, time);
-		return true
-	}
-	return false
-}
-
 function get_todos(md_dir, pdf_dir, url) {
 	//Get list of markdown files
 	let md_files = fs.readdirSync(md_dir)
@@ -120,7 +111,6 @@ function get_todos(md_dir, pdf_dir, url) {
 				o.process.stdout.on('data', data => o.stdout.push(data))
 				o.process.stderr.on('data', data => o.stderr.push(data))
 				o.process.on('close', code => {
-					updateModificationTime(o.pdf_file)
 					console.log(`Processing file ${md_file} exited with code ${code}`)
 				})
 			},
