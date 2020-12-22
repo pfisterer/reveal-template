@@ -1,6 +1,6 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
   "main": "index.js",
@@ -15,9 +15,9 @@
   "author": "Dennis Pfisterer, http://dennis-pfisterer.de",
   "license": "Apache License 2.0",
   "dependencies": {
-    "reveal.js": "^4.0.2",
-    "qrcode": "^1.4.4",
     "connect": "^3.7.0",
+    "qrcode": "^1.4.4",
+    "reveal.js": "^4.1.0",
     "serve-static": "^1.14.1"
   }
 }

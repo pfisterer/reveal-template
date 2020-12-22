@@ -19,7 +19,6 @@ const args = process.argv.slice(2);
 const url = args[0] ? args[0] : `http://${host}:${port}`
 const maxProcessesRunning = Math.max(Math.floor(os.cpus().length / 2, 1))
 
-
 function start_web_server() {
 	var app = connect();
 	app.use(serveStatic(slides_dir));
@@ -76,6 +75,11 @@ function spawn_merge_to_single_pdf(pdfs, pdf, pdf_dir) {
 	return spawn(cmd, args)
 }
 
+function touch_file(path) {
+	const time = new Date();
+	fs.utimesSync(path, time, time);
+}
+
 function get_todos(md_dir, pdf_dir, url) {
 	//Get list of markdown files
 	let md_files = fs.readdirSync(md_dir)
@@ -111,7 +115,8 @@ function get_todos(md_dir, pdf_dir, url) {
 				o.process.stdout.on('data', data => o.stdout.push(data))
 				o.process.stderr.on('data', data => o.stderr.push(data))
 				o.process.on('close', code => {
-					console.log(`Processing file ${md_file} exited with code ${code}`)
+					touch_file(pdf_file)
+					console.log(`Processed file ${md_file}, exited with code ${code}`)
 				})
 			},
 			process: null,
