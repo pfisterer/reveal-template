@@ -49,7 +49,7 @@ function update_docker_image() {
 
 function spawn_convert_md_to_pdf(url, pdf_dir, pdf_name) {
 	let cmd = "docker"
-	let args = ["run", "--rm", "-v", `${pdf_dir}:/slides`, "astefanutti/decktape", "--load-pause", "2000", "--pause", "500", "-s", "1200x800", "automatic", url, `/slides/${path.basename(pdf_name)}`]
+	let args = ["run", "--rm", "-u", `${os.userInfo().uid}`, "-v", `${pdf_dir}:/slides`, "astefanutti/decktape", "--load-pause", "2000", "--pause", "500", "-s", "1200x800", "automatic", url, `/slides/${path.basename(pdf_name)}`]
 
 	let cmdLine = `${cmd} ${args.reduce((a, b) => `${a} '${b}'`, "")}`
 
