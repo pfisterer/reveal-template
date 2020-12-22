@@ -7,6 +7,7 @@ import ShowTitle from './plugins/reveal-plugin-show-title.js';
 import ModifyFontSize from './plugins/reveal-plugin-modify-font-size.js';
 import ShowHTMLExample from './plugins/reveal-plugin-html-example.js';
 import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
+import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 
 // If the query includes 'print-pdf', include the PDF print sheet
 if (window.location.search.match(/print-pdf/gi)) {
@@ -95,7 +96,7 @@ export function initReveal(indexDocument, options, extraPlugins, slidesDestinati
 				margin: 0.05,
 				plugins: [
 					/* Built-in: */ ...modules,
-					/*Dennis' plugins: */ ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin,
+					/*Dennis' plugins: */ ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin,
 					/* Extra ones */ ...(extraPlugins || [])
 				],
 

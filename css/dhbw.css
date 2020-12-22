@@ -478,7 +478,6 @@ right50transparentbox {
 
 .toc_table td {
   border-bottom: 0.1px dotted rgb(198, 198, 198) !important;
-  border-bottom: 
 }
 
 .toc_tr_chapter  td {
@@ -572,3 +571,90 @@ attribution a:visited {
   margin-left: 20px;
   font-size: 13px;
 }
+
+
+/** Dirtree plugin */
+
+ul.dirtree {
+			text-indent: 0;
+			margin: 0px 0px 0px 20px;
+			padding: 0;
+			list-style: none;
+			line-height: 1.5em;
+			font-family: monospace;
+
+			list-style-type: none;
+			margin-block-start: 0;
+			margin-block-end: 0;
+			margin-inline-start: 0px;
+			margin-inline-end: 0px;
+			padding-inline-start: 0;
+		}
+
+		ul.dirtree li.dirtree {
+			list-style-type: none;
+			display: list-item;
+			text-indent: 0;
+			padding: 0;
+			margin-bottom: 0;
+			margin-top: 0;
+			font-size: 16px;
+			position: relative;
+		}
+
+		ul.dirtree li.dirtree:before {
+			position: absolute;
+			left: -15px;
+			top: 0px;
+			content: "" !important;
+			display: block;
+			border-left: 1px solid #ddd;
+			height: 1em;
+			border-bottom: 1px solid #ddd;
+			width: 10px;
+		}
+
+		ul.dirtree li.dirtree:after {
+			position: absolute;
+			left: -15px;
+			bottom: -7px;
+			content: "";
+			display: block;
+			border-left: 1px solid #ddd;
+			height: 100%;
+		}
+
+		ul.dirtree li.root {
+			margin: 0px 0px 0px -20px;
+			padding: 0;
+			padding-left: 20px;
+		}
+
+		ul.dirtree li.root:before {
+			display: none;
+		}
+
+		ul.dirtree li.root:after {
+			display: none;
+		}
+
+		ul.dirtree li.dirtree:last-child:after {
+			display: none;
+		}
+
+		ul.dirtree ul li {
+			margin-left: 0;
+			padding: 0;
+		}
+
+		ul.dirtree ul ul li {
+			margin-left: 0;
+			padding: 0;
+		}
+
+		ul.dirtree ul ul ul li {
+			margin-left: 0;
+			padding: 0;
+    }
+    
+    /** Dirtree plugin: end */
