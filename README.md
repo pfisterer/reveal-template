@@ -12,12 +12,16 @@ Install using `npm install @farberg/reveal-template`
    - Using npm (`npm install @farberg/reveal-template`), see [npm.html](docs/npm.html) for an example.
    - Using a CDN, see [cdn.html](docs/cdn.html) for an example ([see the published result here](https://pfisterer.github.io/reveal-template/cdn.html))
 
+
+## Local Development
+
+Check out this repository, run `npm install`, run a web server from the root directory, and open <http://localhost:5500/docs/local-dev.html>.
+
 ## Publish a new version (maintainers only)
 
 ```bash
 # Bump version in `package.json`
 
 # Run this command to publish on npm
-
 npm publish --access public
 ```

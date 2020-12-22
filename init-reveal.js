@@ -9,98 +9,156 @@ import ShowHTMLExample from './plugins/reveal-plugin-html-example.js';
 import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
 import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 
-// If the query includes 'print-pdf', include the PDF print sheet
-if (window.location.search.match(/print-pdf/gi)) {
-	console.log("Print version requested");
-
-	const link = document.createElement('link');
-	link.rel = 'stylesheet';
-	link.type = 'text/css';
-	link.href = 'reveal/dhbw-print.css';
-	document.getElementsByTagName('head')[0].appendChild(link);
+const defaultOptions = {
+	revealOptions: {},
+	revealPath: "../../reveal.js/",
+	jsPrefixPath: "",
+	slidesDestinationElement: document.querySelector("body div.reveal div.slides"),
+	indexDocument: "00 - Introduction.md"
 }
 
-function loadRevealAndPlugins(revealPath) {
-	const imports = ["dist/reveal.esm.js" /*must be the first one*/, "plugin/markdown/markdown.esm.js", "plugin/highlight/highlight.esm.js", "plugin/search/search.esm.js", "plugin/notes/notes.esm.js", "plugin/math/math.esm.js", "plugin/zoom/zoom.esm.js"]
+const externalJsLibs = [
+	'node_modules/qrcode/build/qrcode.min.js',
+	'node_modules/file-saver/dist/FileSaver.min.js',
+	'node_modules/jszip/dist/jszip.min.js'
+]
 
-	return Promise.all(imports.map(i => import(revealPath + "/" + i)))
+const defaultDennisPlugins = [
+	ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle,
+	ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin
+]
+
+const defaultRevealOptions = {
+	embedded: false,
+	// Display controls in the bottom right corner
+	controls: false,
+	// Display a presentation progress bar
+	progress: true,
+	// Display the page number of the current slide
+	slideNumber: true,
+	// Push each slide change to the browser history
+	history: true,
+	// none/fade/slide/convex/concave/zoom
+	transition: 'slide',
+	// Transition speed // default/fast/slow
+	transitionSpeed: 'default',
+	// Vertical centering of slides
+	center: false,
+	//Markdown config
+	markdown: {
+		smartypants: true,
+	},
+	keyboard: {
+		33: function () { Reveal.left(); }, // Don't go up using the presenter
+		34: function () { Reveal.right(); }, // Don't go down using the presenter
+		65  /* a */: function () { window.location.assign("./#/agenda") }, //Go to the agenda
+	},
+	// Bounds for smallest/largest possible scale to apply to content
+	minScale: 0.1,
+	maxScale: 3,
+
+	// Factor of the display size that should remain empty around the content
+	margin: 0.05,
+	// Leave here
+	plugins: []
 }
 
+async function addPrintStylesheetIfUrlContainsPrintPdf() {
+	// If the query includes 'print-pdf', include the PDF print sheet
+	if (window.location.search.match(/print-pdf/gi)) {
+		console.log("Print version requested");
+
+		const link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.type = 'text/css';
+		link.href = 'reveal/dhbw-print.css';
+		document.getElementsByTagName('head')[0].appendChild(link);
+	}
+}
+
+// Resolve when window has finished loading
 function windowOnLoadPromise() {
 	return new Promise((resolve, reject) => {
 		window.addEventListener('load', () => resolve())
 	})
 }
 
-export function initReveal(indexDocument, options, extraPlugins, slidesDestinationElement, revealPath) {
-	//Wait until window is loaded and reveal imports have loaded
-	Promise.all([loadRevealAndPlugins(revealPath || "../../reveal.js/"), windowOnLoadPromise()])
-		.catch(error => {
-			console.error("Unable to load dependencies: ", error);
-		})
-		.then(values => {
-			//Get the first element from the array, this is the Reveal module
-			const modules = values[0].map(m => m.default)
-			const Reveal = modules.shift();
+// Load reveal and its plugins
+function loadRevealAndPlugins(options) {
+	const imports = [
+		"dist/reveal.esm.js" /*must be the first one*/,
+		"plugin/markdown/markdown.esm.js",
+		"plugin/highlight/highlight.esm.js",
+		"plugin/search/search.esm.js",
+		"plugin/notes/notes.esm.js",
+		"plugin/math/math.esm.js",
+		"plugin/zoom/zoom.esm.js"
+	]
 
-			const decoded = decodeURI(window.location.search);
-			const match = decoded.match(/\?([\w\s-]+.md)/);
+	return Promise.all(imports.map(i => import(options.revealPath + "/" + i)))
+}
 
-			if (match && match[1]) {
-				indexDocument = match[1];
-			} else {
-				window.location.href = '?' + indexDocument + window.location.hash;
-			}
+// Add js tags to the header and resolve
+async function addJsDependencies(options, externalJsLibs) {
+	for (let file of externalJsLibs) {
+		const script = document.createElement('script');
+		script.src = options.jsPrefixPath + file;
+		document.head.appendChild(script);
+	}
+}
 
-			// Create a section to load the markdown contents
-			const mdel = document.createElement("section");
-			mdel.setAttribute("data-markdown", indexDocument)
-			mdel.setAttribute("data-separator", "^---")
-			mdel.setAttribute("data-separator-vertical", "^vvv")
-			mdel.setAttribute("data-charset", "utf-8")
+function getDocumentToLoadOrRedirectToIndexDocument(options) {
+	const decoded = decodeURI(window.location.search);
+	const match = decoded.match(/\?([\w\s-]+.md)/);
 
-			const slidesEl = slidesDestinationElement || document.querySelector("body div.reveal div.slides")
-			slidesEl.appendChild(mdel)
+	//Url matches and contains a document to load
+	if (match && match[1]) {
+		const doc = match[1];
+		return doc;
+	}
 
-			window.Reveal = Reveal
-			Reveal.initialize(Object.assign({
-				embedded: false,
-				// Display controls in the bottom right corner
-				controls: false,
-				// Display a presentation progress bar
-				progress: true,
-				// Display the page number of the current slide
-				slideNumber: true,
-				// Push each slide change to the browser history
-				history: true,
-				// none/fade/slide/convex/concave/zoom
-				transition: 'slide',
-				// Transition speed // default/fast/slow
-				transitionSpeed: 'default',
-				// Vertical centering of slides
-				center: false,
-				//Markdown config
-				markdown: {
-					smartypants: true,
-				},
-				keyboard: {
-					33: function () { Reveal.left(); }, // Don't go up using the presenter
-					34: function () { Reveal.right(); }, // Don't go down using the presenter
-					65  /* a */: function () { window.location.assign("./#/agenda") }, //Go to the agenda
-				},
-				// Bounds for smallest/largest possible scale to apply to content
-				minScale: 0.1,
-				maxScale: 3,
+	// URL pattern does not match, redirect to index document
+	window.location.href = '?' + options.indexDocument + window.location.hash;
+}
 
-				// Factor of the display size that should remain empty around the content
-				margin: 0.05,
-				plugins: [
-					/* Built-in: */ ...modules,
-					/*Dennis' plugins: */ ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle, ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin,
-					/* Extra ones */ ...(extraPlugins || [])
-				],
+function addMarkdownSectionToPresentation(doc, options) {
+	// Create a section to load the markdown contents
+	const mdel = document.createElement("section");
+	mdel.setAttribute("data-markdown", doc)
+	mdel.setAttribute("data-separator", "^---")
+	mdel.setAttribute("data-separator-vertical", "^vvv")
+	mdel.setAttribute("data-charset", "utf-8")
 
-			}, options));
-		})
+	options.slidesDestinationElement.appendChild(mdel)
+}
 
+export function initReveal(opts) {
+	// Generate options and include defaults (later sources' properties overwrite earlier ones)
+	const options = Object.assign({}, defaultOptions, opts)
+
+	// Load dependencies and then initialize Reveal
+	Promise.all([
+		loadRevealAndPlugins(options),
+		addJsDependencies(options, externalJsLibs),
+		addPrintStylesheetIfUrlContainsPrintPdf(),
+		windowOnLoadPromise()
+	]).then(values => {
+		//Get the first element from the array, this is the Reveal module
+		const modules = values[0].map(m => m.default)
+		const Reveal = modules.shift();
+
+		//Make it globally available
+		window.Reveal = Reveal
+
+		//Add markdown doc to presentation
+		addMarkdownSectionToPresentation(getDocumentToLoadOrRedirectToIndexDocument(options), options);
+
+		//Initialize Reveal
+		const finalOptions = Object.assign(defaultRevealOptions, options.revealOptions);
+		finalOptions.plugins = [...modules, ...defaultDennisPlugins, ...finalOptions.plugins]
+		Reveal.initialize(finalOptions);
+
+	}).catch(error => {
+		console.error("Unable to load dependencies: ", error);
+	})
 }
