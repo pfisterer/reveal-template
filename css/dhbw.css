@@ -235,7 +235,8 @@ body {
   display: block;
   position: relative;
   width: 95%;
-  margin: 20px auto;
+  margin: 5px auto;
+  margin-left: 20px auto;
   text-align: left;
   font-size: 0.7em;
   font-family: monospace;
