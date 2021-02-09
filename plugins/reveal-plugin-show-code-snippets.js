@@ -1,8 +1,10 @@
+import outdent from './outdent.js'
+
 function showError(el, err) {
 	el.innerText = `${err} - (Original innerText=${el.innerText})`
 }
 
-function showCode(el, language, code, link) {
+function showCode(el, language, code, link, outdent) {
 	var newEl = document.createElement('pre');
 	newEl.setAttribute('class', `language-${language}`);
 	//Replace special chars
@@ -63,6 +65,7 @@ export default () => {
 					let beginMarker = el.getAttribute("data-begin")
 					let endMarker = el.getAttribute("data-end")
 					let showLink = el.hasAttribute("data-link")
+					let outdentCode = el.hasAttribute("data-outdent")
 
 					//console.log(`language = ${language}, url = ${url}, beginMarker = ${beginMarker}, endMarker = ${endMarker}, showLink = ${showLink} `)
 
@@ -70,7 +73,11 @@ export default () => {
 						fetch(url, { "cache": "no-store" })
 							.then(response => response.text()).then(text => {
 								let code = extractBeginEndSnippet(text, beginMarker, endMarker)
-								const newEl = showCode(el, language, code, showLink ? url : null)
+
+								if (outdentCode)
+									code = outdent(code)
+
+								const newEl = showCode(el, language, code, showLink ? url : null, outdent)
 								highlightPlugin.highlightBlock(newEl)
 							}).catch(err => {
 								showError(el, err)
