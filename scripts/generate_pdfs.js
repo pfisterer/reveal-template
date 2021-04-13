@@ -190,7 +190,11 @@ function merge_pdfs(todos, out_file) {
 	return new Promise((resolve, reject) => {
 
 		//Merge to a single PDF (only if the PDFs have more than 0 bytes)
-		let pdfs = todos.filter(todo => fs.statSync(todo.pdf_file).size > 0).map(todo => todo.pdf_name)
+		let pdfs = todos
+			.filter(todo => fs.existsSync(todo.pdf_file))
+			.filter(todo => fs.statSync(todo.pdf_file).size > 0)
+			.map(todo => todo.pdf_name)
+
 		let p = spawn_merge_to_single_pdf(pdfs, out_file, pdf_dir)
 
 		p.on('close', code => {
