@@ -77,7 +77,8 @@ function spawn_merge_to_single_pdf(pdfs, pdf, pdf_dir) {
 
 function touch_file(path) {
 	const time = new Date();
-	fs.utimesSync(path, time, time);
+	if (fs.existsSync(path))
+		fs.utimesSync(path, time, time);
 }
 
 function get_todos(md_dir, pdf_dir, url) {
