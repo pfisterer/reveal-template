@@ -20,7 +20,8 @@ const defaultOptions = {
 const externalJsLibs = [
 	'node_modules/qrcode/build/qrcode.min.js',
 	'node_modules/file-saver/dist/FileSaver.min.js',
-	'node_modules/jszip/dist/jszip.min.js'
+	'node_modules/jszip/dist/jszip.min.js',
+	'node_modules/reveal.js-plugins/chalkboard/plugin.js'
 ]
 
 const defaultDennisPlugins = [
@@ -155,7 +156,15 @@ export function initReveal(opts) {
 
 		//Initialize Reveal
 		const finalOptions = Object.assign(defaultRevealOptions, options.revealOptions);
-		finalOptions.plugins = [...modules, ...defaultDennisPlugins, ...finalOptions.plugins]
+
+		//Add plugins
+		finalOptions.plugins = [
+			...modules,
+			...defaultDennisPlugins,
+			window.RevealChalkboard,
+			...finalOptions.plugins
+		]
+
 		Reveal.initialize(finalOptions);
 
 	}).catch(error => {
