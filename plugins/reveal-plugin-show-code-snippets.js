@@ -78,7 +78,7 @@ export default () => {
 									code = outdent(code)
 
 								const newEl = showCode(el, language, code, showLink ? url : null, outdent)
-								highlightPlugin.highlightBlock(newEl)
+								highlightPlugin.highlightElement(newEl)
 							}).catch(err => {
 								showError(el, err)
 							})
