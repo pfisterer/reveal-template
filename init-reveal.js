@@ -13,6 +13,7 @@ const defaultOptions = {
 	revealOptions: {},
 	revealPath: "../../reveal.js/",
 	jsPrefixPath: "",
+	cssPrefixPath: "",
 	slidesDestinationElement: document.querySelector("body div.reveal div.slides"),
 	indexDocument: "00 - Introduction.md"
 }
@@ -22,6 +23,12 @@ const externalJsLibs = [
 	'node_modules/file-saver/dist/FileSaver.min.js',
 	'node_modules/jszip/dist/jszip.min.js',
 	'node_modules/reveal.js-plugins/chalkboard/plugin.js'
+]
+
+const extraStylesheets = [
+	{ href: 'node_modules/reveal.js/dist/reveal.css' },
+	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
+	{ href: 'node_modules/@farberg/reveal-template/css/dhbw.css', id: 'theme' }
 ]
 
 const defaultDennisPlugins = [
@@ -108,6 +115,19 @@ async function addJsDependencies(options, externalJsLibs) {
 	}
 }
 
+// Add CSSs tags to the header and resolve
+async function addCssDependencies(options, cssFiles) {
+	for (let css of cssFiles) {
+		const cssEl = document.createElement('link');
+		cssEl.rel = "stylesheet"
+		cssEl.href = options.cssPrefixPath + css.href;
+		if (css.id)
+			cssEl.id = css.id
+
+		document.head.appendChild(cssEl);
+	}
+}
+
 function getDocumentToLoadOrRedirectToIndexDocument(options) {
 	const decoded = decodeURI(window.location.search);
 	const match = decoded.match(/\?([\w\s-]+.md)/);
@@ -141,6 +161,7 @@ export function initReveal(opts) {
 	Promise.all([
 		loadRevealAndPlugins(options),
 		addJsDependencies(options, externalJsLibs),
+		addCssDependencies(options, extraStylesheets),
 		addPrintStylesheetIfUrlContainsPrintPdf(),
 		windowOnLoadPromise()
 	]).then(values => {
