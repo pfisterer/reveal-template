@@ -14,8 +14,10 @@ const defaultOptions = {
 	revealPath: "../../reveal.js/",
 	jsPrefixPath: "",
 	cssPrefixPath: "",
+	cssThemePrefixPath: "node_modules/@farberg/reveal-template/",
 	slidesDestinationElement: document.querySelector("body div.reveal div.slides"),
-	indexDocument: "00 - Introduction.md"
+	indexDocument: "00 - Introduction.md",
+	verbose: false
 }
 
 const externalJsLibs = [
@@ -28,7 +30,11 @@ const externalJsLibs = [
 const extraStylesheets = [
 	{ href: 'node_modules/reveal.js/dist/reveal.css' },
 	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
-	{ href: 'node_modules/@farberg/reveal-template/css/dhbw.css', id: 'theme' }
+]
+
+const extraThemeCssStylesheets = [
+	{ href: 'css/dhbw.css', id: 'theme' }
+
 ]
 
 const defaultDennisPlugins = [
@@ -103,6 +109,9 @@ function loadRevealAndPlugins(options) {
 		"plugin/zoom/zoom.esm.js"
 	]
 
+	if (options.verbose)
+		console.log("Importing the following plugins: ", imports)
+
 	return Promise.all(imports.map(i => import(options.revealPath + "/" + i)))
 }
 
@@ -116,16 +125,25 @@ async function addJsDependencies(options, externalJsLibs) {
 }
 
 // Add CSSs tags to the header and resolve
-async function addCssDependencies(options, cssFiles) {
-	for (let css of cssFiles) {
+async function addCssDependencies(options, cssFiles, themeCssFiles) {
+	function addCssElement(href, id) {
 		const cssEl = document.createElement('link');
 		cssEl.rel = "stylesheet"
-		cssEl.href = options.cssPrefixPath + css.href;
-		if (css.id)
-			cssEl.id = css.id
+		cssEl.href = href
+		if (id)
+			cssEl.id = id
 
 		document.head.appendChild(cssEl);
 	}
+
+	for (let css of cssFiles) {
+		addCssElement(options.cssPrefixPath + css.href, css.id)
+	}
+
+	for (let css of themeCssFiles) {
+		addCssElement(options.cssThemePrefixPath + css.href, css.id)
+	}
+
 }
 
 function getDocumentToLoadOrRedirectToIndexDocument(options) {
@@ -161,7 +179,7 @@ export function initReveal(opts) {
 	Promise.all([
 		loadRevealAndPlugins(options),
 		addJsDependencies(options, externalJsLibs),
-		addCssDependencies(options, extraStylesheets),
+		addCssDependencies(options, extraStylesheets, extraThemeCssStylesheets),
 		addPrintStylesheetIfUrlContainsPrintPdf(),
 		windowOnLoadPromise()
 	]).then(values => {
@@ -185,6 +203,9 @@ export function initReveal(opts) {
 			window.RevealChalkboard,
 			...finalOptions.plugins
 		]
+
+		if (options.verbose)
+			console.log("Invoking Reveal.initialize with options: ", finalOptions)
 
 		Reveal.initialize(finalOptions);
 
