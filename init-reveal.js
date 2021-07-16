@@ -30,6 +30,7 @@ const externalJsLibs = [
 const extraStylesheets = [
 	{ href: 'node_modules/reveal.js/dist/reveal.css' },
 	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
+	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' }
 ]
 
 const extraThemeCssStylesheets = [
