@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
+const decktape_image = 'astefanutti/decktape:3.1'
 
 const cwd = process.cwd()
 const slides_dir = cwd
@@ -35,7 +36,7 @@ function update_docker_image() {
 	return new Promise((resolve, reject) => {
 
 		let cmd = "docker"
-		let args = ["pull", "astefanutti/decktape"]
+		let args = ["pull", decktape_image]
 		let cmdLine = `${cmd} ${args.reduce((a, b) => `${a} '${b}'`, "")}`
 
 		if (verbose)
@@ -49,7 +50,7 @@ function update_docker_image() {
 
 function spawn_convert_md_to_pdf(url, pdf_dir, pdf_name) {
 	let cmd = "docker"
-	let args = ["run", "--rm", "-u", `${os.userInfo().uid}`, "-v", `${pdf_dir}:/slides`, "astefanutti/decktape", "--load-pause", "2000", "--pause", "500", "-s", "1200x800", "automatic", url, `/slides/${path.basename(pdf_name)}`]
+	let args = ["run", "--rm", "-u", `${os.userInfo().uid}`, "-v", `${pdf_dir}:/slides`, decktape_image, "--load-pause", "2000", "--pause", "500", "-s", "1200x800", "automatic", url, `/slides/${path.basename(pdf_name)}`]
 
 	let cmdLine = `${cmd} ${args.reduce((a, b) => `${a} '${b}'`, "")}`
 

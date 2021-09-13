@@ -35,7 +35,7 @@ module.exports.pdf_exists_and_is_newer_than_markdown = function (markdownpath, p
 
 	if (!pdf_newer) {
 		if (verbose)
-			console.error(`pdf is not newer than md`)
+			console.error(`Skipping ${markdownpath}: pdf is not newer than md`)
 		return false
 	}
 	return true
