@@ -4,10 +4,18 @@ const dir_tree = {
 
 		deck.on('ready', () => {
 			for (let el of deck.getRevealElement().querySelectorAll("[data-prefix-url]")) {
+				const convertToInlineCode = el.getAttribute('data-convert-to-inline-code')
 				const attribute = el.getAttribute('data-prefix-url')
 				const urlPath = window.location.href.split('?')[0]
 				const prefix = attribute || urlPath
-				el.innerText = prefix + el.innerText
+
+				if (convertToInlineCode) {
+					console.log("convertToInlineCode", convertToInlineCode)
+					el.outerHTML = `<code>${prefix + el.innerText}</code>`
+
+				} else {
+					el.innerText = prefix + el.innerText
+				}
 			}
 
 		})
