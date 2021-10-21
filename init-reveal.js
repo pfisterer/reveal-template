@@ -8,6 +8,7 @@ import ModifyFontSize from './plugins/reveal-plugin-modify-font-size.js';
 import ShowHTMLExample from './plugins/reveal-plugin-html-example.js';
 import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
 import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
+import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 
 const defaultOptions = {
 	revealOptions: {},
@@ -40,7 +41,8 @@ const extraThemeCssStylesheets = [
 
 const defaultDennisPlugins = [
 	ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle,
-	ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin
+	ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin,
+	PrefixUrlPlugin
 ]
 
 const defaultRevealOptions = {
