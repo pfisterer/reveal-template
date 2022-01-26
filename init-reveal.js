@@ -22,7 +22,7 @@ const defaultOptions = {
 }
 
 const externalJsLibs = [
-	'node_modules/qrcode/build/qrcode.min.js',
+	'node_modules/qrcode/build/qrcode.js',
 	'node_modules/file-saver/dist/FileSaver.min.js',
 	'node_modules/jszip/dist/jszip.min.js',
 	'node_modules/reveal.js-plugins/chalkboard/plugin.js'

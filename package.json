@@ -1,6 +1,6 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
   "main": "index.js",
@@ -18,9 +18,9 @@
     "connect": "^3.7.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.7.1",
-    "qrcode": "^1.4.4",
-    "reveal.js": "^4.1.3",
+    "qrcode": "^1.5.0",
+    "reveal.js": "^4.2.1",
     "reveal.js-plugins": "^4.1.5",
-    "serve-static": "^1.14.1"
+    "serve-static": "^1.14.2"
   }
 }

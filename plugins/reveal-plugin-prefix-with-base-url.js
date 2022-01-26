@@ -10,9 +10,7 @@ const dir_tree = {
 				const prefix = attribute || urlPath
 
 				if (convertToInlineCode) {
-					console.log("convertToInlineCode", convertToInlineCode)
 					el.outerHTML = `<code>${prefix + el.innerText}</code>`
-
 				} else {
 					el.innerText = prefix + el.innerText
 				}
