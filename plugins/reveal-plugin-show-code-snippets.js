@@ -56,6 +56,7 @@ export default () => {
 		init: (deck) => {
 
 			deck.on('ready', () => {
+				const highlightPlugin = deck.getPlugin("highlight")
 
 				for (let el of deck.getRevealElement().querySelectorAll("a[data-code]")) {
 					//console.log(`Loading code snippets, looking at`, el)
@@ -76,8 +77,9 @@ export default () => {
 								if (outdentCode)
 									code = outdent(code)
 
-								const newEl = showCode(el, language, code, showLink ? url : null, outdent)
-								highlightPlugin.highlightElement(newEl)
+								/* const newEl = */ showCode(el, language, code, showLink ? url : null, outdent)
+								//highlightPlugin.highlightElement(newEl)
+								highlightPlugin.hljs.highlightAll()
 							}).catch(err => {
 								showError(el, err)
 							})
@@ -86,9 +88,6 @@ export default () => {
 					}
 				}
 
-				// Highlight all code snippets
-				const highlightPlugin = deck.getPlugin("highlight")
-				highlightPlugin.hljs.highlightAll()
 			})
 
 		}
