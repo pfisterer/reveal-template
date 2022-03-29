@@ -1,3 +1,21 @@
+/*
+Renders a code example as innerHTML of a target element (default is the next sibling with class html-example-output)
+
+Parameters:
+- data-html-destination-id: change default destination element
+
+<h1>Willkommen im Internet</h1>
+```
+<!-- .element: data-html-example -->
+
+Output
+
+<div class="html-example-output"></div>
+
+
+*/
+
+
 function resizeIFrameToFitContent(iFrame) {
 	iFrame.width = iFrame.contentWindow.document.body.scrollWidth;
 	iFrame.height = iFrame.contentWindow.document.body.scrollHeight;

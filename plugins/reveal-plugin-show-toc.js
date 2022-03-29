@@ -1,3 +1,18 @@
+/*
+	Loads the table of contents from a file and displays it
+
+	Parameters:
+
+		data-toc-src: Defaults to "generated_toc.html" 
+	
+	Example:
+
+	## Agenda
+	<!-- .slide: id="agenda" -->
+
+	<div data-toc-src="generated_toc.html" style="font-size: 0.82em;" />
+ */
+
 function showToc(url, el) {
 	fetch(url, { "cache": "no-store" })
 		.then(res => res.text())

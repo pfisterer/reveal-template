@@ -1,3 +1,14 @@
+/*
+Prefixes the pages base URL to an element's inner Text
+
+Parameters:
+- data-convert-to-inline-code="language": Converts the element to an inline code element.
+
+Example:
+
+<span data-prefix-url data-convert-to-inline-code="bash">code/k8s-simple/pod-demo-busybox.yaml</span>
+*/
+
 const dir_tree = {
 	id: 'prefix_url',
 	init: (deck) => {

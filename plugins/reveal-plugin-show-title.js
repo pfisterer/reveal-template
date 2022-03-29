@@ -1,3 +1,23 @@
+/*
+	Create a title slide automatically by reading data out of package.json to display the title slide:
+	
+	package.json:
+	
+	{
+		[...]
+		title: "Title of the presentation",
+		homepage: "https://the.url/to/the/slides",
+		authors: [
+			{ "name": "John Doe", homepage:"https://jon.doe.com" },
+			{ "name": "Jane Doe", homepage:"https://jane.doe.com" },
+		]
+		[...]
+	}
+
+	Example markdown:
+		<div class="lecturetitle">This is the Title of the Presentation</div>
+*/
+
 function showTitle(deck, packageJson) {
 	let lectureTitle = packageJson.title
 

@@ -1,3 +1,12 @@
+/*
+	Extracts data from the current slide's <credit></credit> innerHTML 
+	and inserts it into the global attribution element.
+
+	Example:
+		
+	<credits>Bildquelle: Some Page (<a href="https://example.com/photos/133434">example.com</a>)</credits>
+*/
+
 function showAttributionOnSlide(slide) {
 	//This will set the current credits correctly
 	var creditsTag = document.getElementById("attribution");

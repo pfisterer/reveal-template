@@ -1,3 +1,21 @@
+/*
+Create a zip from existing files for download and display a tree of files
+
+<pre class="dirtree" data-zipname="k8s-Exercise.zip" data-strip-prefix="code/k8s-demo-app"> 
+code/k8s-demo-app/01-mariadb-deployment.yaml
+code/k8s-demo-app/02-k8s-mariadb-service.yaml
+code/k8s-demo-app/03-memcached-deployment-and-service.yaml
+code/k8s-demo-app/04-app-deployment-minikube.yaml
+code/k8s-demo-app/04-app-service-and-ingress.yaml
+code/k8s-demo-app/Dockerfile
+code/k8s-demo-app/package.json
+code/k8s-demo-app/server.js
+</pre>
+
+
+
+*/
+
 const dir_tree = {
 	id: 'dir_tree',
 	init: (deck) => {

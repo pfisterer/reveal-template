@@ -1,4 +1,22 @@
+/*
+	Display a QR code in a destination element by extracting data out of `package.json` and can show the URL on the slides
 
+	package.json:
+
+	{
+		[...]
+		"homepage": "http://the.url/to/the/slides"
+		[...]
+	}
+
+	Example:
+		Show QR code: 
+			<canvas class="qrcodeforslides"></canvas>
+
+		Show URL: 
+			<a class="urlforslides" style="font-size: 200%"></a>
+
+*/
 function showLinkToSlidesAndQrCode(deck, url) {
 	if (url === undefined)
 		return

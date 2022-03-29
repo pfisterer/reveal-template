@@ -1,3 +1,21 @@
+/*
+Shows a code snippet after loading it from a file.
+
+Parameters:
+- data-code: Language
+- data-begin: Begin indicator in the file (optional)
+- data-end: End indicator in the file (optional)
+- data-link: Show a link to the file (optional)
+
+Example
+
+<a 	data-code='bash' 
+	data-begin="# Begin indicator in the file" 
+	data-end="# End indicator in the file" 
+	data-link
+	href="link/to/the/file.sh">Source code</a>
+*/
+
 import outdent from './outdent.js'
 
 function showError(el, err) {
