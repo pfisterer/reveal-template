@@ -27,13 +27,15 @@ const externalJsLibs = [
 	'node_modules/qrcode/build/qrcode.js',
 	'node_modules/file-saver/dist/FileSaver.min.js',
 	'node_modules/jszip/dist/jszip.min.js',
-	'node_modules/reveal.js-plugins/chalkboard/plugin.js'
+	'node_modules/reveal.js-plugins/chalkboard/plugin.js',
+	'node_modules/asciinema-player/dist/bundle/asciinema-player.min.js'
 ]
 
 const extraStylesheets = [
 	{ href: 'node_modules/reveal.js/dist/reveal.css' },
 	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
-	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' }
+	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
+	{ href: 'node_modules/asciinema-player/dist/bundle/asciinema-player.css' }
 ]
 
 const extraThemeCssStylesheets = [
