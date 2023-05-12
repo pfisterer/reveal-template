@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
-const decktape_image = 'astefanutti/decktape:3.1'
+const decktape_image = 'astefanutti/decktape:3.7'
 
 const cwd = process.cwd()
 const slides_dir = cwd
