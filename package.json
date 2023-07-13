@@ -18,7 +18,7 @@
     "connect": "^3.7.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
-    "qrcode": "1.5.3",
+    "qrcode": "1.5.1",
     "reveal.js": "^4.5.0",
     "reveal.js-plugins": "^4.2.0",
     "serve-static": "^1.15.0",
