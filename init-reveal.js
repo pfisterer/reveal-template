@@ -92,7 +92,7 @@ async function addPrintStylesheetIfUrlContainsPrintPdf() {
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.type = 'text/css';
-		link.href = 'reveal/dhbw-print.css';
+		link.href = 'node_modules/@farberg/reveal-template/css/dhbw-print.css';
 		document.getElementsByTagName('head')[0].appendChild(link);
 	}
 }
