@@ -198,23 +198,29 @@ export function initReveal(opts) {
 		window.Reveal = Reveal
 
 		//Add markdown doc to presentation
-		addMarkdownSectionToPresentation(getDocumentToLoadOrRedirectToIndexDocument(options), options);
+		const doc = getDocumentToLoadOrRedirectToIndexDocument(options)
 
-		//Initialize Reveal
-		const finalOptions = Object.assign(defaultRevealOptions, options.revealOptions);
+		if (doc) {
+			addMarkdownSectionToPresentation(doc, options);
 
-		//Add plugins
-		finalOptions.plugins = [
-			...modules,
-			...defaultDennisPlugins,
-			window.RevealChalkboard,
-			...finalOptions.plugins
-		]
+			//Initialize Reveal
+			const finalOptions = Object.assign(defaultRevealOptions, options.revealOptions);
 
-		if (options.verbose)
-			console.log("Invoking Reveal.initialize with options: ", finalOptions)
+			//Add plugins
+			finalOptions.plugins = [
+				...modules,
+				...defaultDennisPlugins,
+				window.RevealChalkboard,
+				...finalOptions.plugins
+			]
 
-		Reveal.initialize(finalOptions);
+			if (options.verbose)
+				console.log("Invoking Reveal.initialize with options: ", finalOptions)
+
+			Reveal.initialize(finalOptions);
+		} else {
+			console.error("No document to load, aborting");
+		}
 
 	}).catch(error => {
 		console.error("Unable to load dependencies: ", error);
