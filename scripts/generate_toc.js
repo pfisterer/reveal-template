@@ -20,6 +20,8 @@ let md_files = fs.readdirSync(".")
 
 let generateTable = md_files.map(file => file.match(structuredNameRegexp)).reduce((a, b) => a && b, true)
 
+console.error(`Generating ${generateTable ? 'table' : 'list'} of contents for ${md_files.length} files.`)
+
 if (generateTable)
 	console.log("<table class='toc_table'>")
 else
@@ -70,6 +72,7 @@ if (generateTable) {
 }
 
 let exists = fs.existsSync(path.join(pdf_folder, combined_pdf_name))
+console.error(`Combined PDF ${exists ? "does" : "does not"} exist. Looking for '${combined_pdf_name}'`)
 if (exists) {
 	console.log(`
 		<credits>
