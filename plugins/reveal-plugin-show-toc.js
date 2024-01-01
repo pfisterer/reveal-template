@@ -17,7 +17,7 @@ function showToc(url, el) {
 	fetch(url, { "cache": "no-store" })
 		.then(res => res.text())
 		.then(html => el.innerHTML = html)
-		.catch(el.innerText = `Unable to load TOC from ${url}`)
+		.catch(e => console.log(`Unable to load TOC from ${url}`, e))
 }
 
 export default () => {
