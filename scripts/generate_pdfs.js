@@ -12,7 +12,7 @@ const cwd = process.cwd()
 const slides_dir = cwd
 const pdf_dir = path.join(cwd, '__pdfs__')
 const host = os.hostname()
-const port = 1256
+const port = 1252
 const verbose = true
 const package_json = JSON.parse(fs.readFileSync('package.json'))
 const combined_pdf_name = combined_pdf(package_json)
@@ -112,11 +112,11 @@ async function convert_to_pdf_single(todo) {
 	const browser = await puppeteer.launch({ headless: 'new' })
 	const page = await browser.newPage();
 
-	await page.goto(todo.presentation_url, { timeout: 5000, waitUntil: ['load', 'domcontentloaded'] });
+	await page.goto(todo.presentation_url, { timeout: 10000, waitUntil: ['load', 'domcontentloaded'] });
 
 	const selector = 'div.lecturetitle > h1'
 	try {
-		await page.waitForSelector(selector, { timeout: 5000 })
+		await page.waitForSelector(selector, { timeout: 10000 })
 	} catch (e) {
 		console.error(`Unable to find selector ${selector} on ${todo.presentation_url}`)
 	}
