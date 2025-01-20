@@ -17,15 +17,22 @@
 			<a class="urlforslides" style="font-size: 200%"></a>
 
 */
+
+
 function showLinkToSlidesAndQrCode(deck, url) {
 	if (url === undefined)
 		return
 
 	let qrElements = deck.getSlidesElement().getElementsByClassName('qrcodeforslides')
 	for (let qrel of qrElements) {
-		QRCode.toCanvas(qrel, url, { scale: 15, margin: 0 }, function (error) {
-			if (error) console.error(error)
+
+		new QRCode(qrel, {
+			text: url,
+			width: 500,
+			height: 500,
 		});
+
+		console.log("QR Code for slides generated", qrel, url)
 	}
 
 	let urlElements = deck.getSlidesElement().getElementsByClassName('urlforslides')
