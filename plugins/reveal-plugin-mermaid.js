@@ -1,6 +1,6 @@
-import mermaid from './node_modules/mermaid/dist/mermaid.esm.min.mjs';
+import mermaid from '../../../mermaid/dist/mermaid.esm.min.mjs';
 
-export const MermaidPlugin = {
+export default {
 	id: 'mermaid',
 	init: (deck) => {
 		mermaid.initialize({

@@ -10,7 +10,7 @@ import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
 import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
-import MermaidPlugin from 'plugins/reveal-plugin-mermaid.js';
+import MermaidPlugin from './plugins/reveal-plugin-mermaid.js';
 
 const defaultOptions = {
 	revealOptions: {},
