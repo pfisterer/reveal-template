@@ -10,7 +10,7 @@ import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
 import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
-
+import MermaidPlugin from 'plugins/reveal-plugin-mermaid.js';
 
 const defaultOptions = {
 	revealOptions: {},
@@ -27,14 +27,14 @@ const externalJsLibs = [
 	'node_modules/easyqrcodejs/dist/easy.qrcode.min.js',
 	'node_modules/file-saver/dist/FileSaver.min.js',
 	'node_modules/jszip/dist/jszip.min.js',
-	'node_modules/reveal.js-plugins/chalkboard/plugin.js',
+	//'node_modules/reveal.js-plugins/chalkboard/plugin.js',
 	'node_modules/asciinema-player/dist/bundle/asciinema-player.min.js'
 ]
 
 const extraStylesheets = [
 	{ href: 'node_modules/reveal.js/dist/reveal.css' },
 	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
-	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
+	//{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
 	{ href: 'node_modules/asciinema-player/dist/bundle/asciinema-player.css' }
 ]
 
@@ -46,7 +46,7 @@ const extraThemeCssStylesheets = [
 const defaultDennisPlugins = [
 	ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle,
 	ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin,
-	PrefixUrlPlugin, AsciinemaPlugin
+	PrefixUrlPlugin, AsciinemaPlugin, MermaidPlugin
 ]
 
 const defaultRevealOptions = {
@@ -210,7 +210,7 @@ export function initReveal(opts) {
 			finalOptions.plugins = [
 				...modules,
 				...defaultDennisPlugins,
-				window.RevealChalkboard,
+				//window.RevealChalkboard,
 				...finalOptions.plugins
 			]
 

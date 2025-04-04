@@ -5,7 +5,6 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer')
-const PDFMerger = require('pdf-merger-js');
 const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
 
 const cwd = process.cwd()
@@ -145,6 +144,7 @@ async function convert_to_pdf_single(todo) {
 
 async function merge_pdfs(todos, out_file) {
 	const out_file_path = path.join(pdf_dir, path.basename(out_file))
+	const { default: PDFMerger } = await import("pdf-merger-js");
 	const merger = new PDFMerger()
 
 	let pdfs = todos
