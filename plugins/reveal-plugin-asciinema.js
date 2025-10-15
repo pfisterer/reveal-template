@@ -4,7 +4,7 @@ function initSlide(slide) {
 	let asciinemaElements = slide.getElementsByTagName("asciinema")
 
 	for (let el of asciinemaElements) {
-		console.log("Found asciinema element: ", el)
+		//console.log("Found asciinema element: ", el)
 
 		//Make element invisible
 		el.style.display = "none"
@@ -16,7 +16,7 @@ function initSlide(slide) {
 
 		div.setAttribute('data-farberg-asciinema', 'true')
 
-		console.log("Playing", source, "with options", conf)
+		//console.log("Playing", source, "with options", conf)
 		players.push(AsciinemaPlayer.create(source, div, JSON.parse(conf)))
 
 		el.parentNode.insertBefore(div, el.nextSibling)
@@ -28,13 +28,13 @@ function initSlide(slide) {
 function destroyPlayer(slide, players) {
 	//remove elements from dom with attribute data-farberg-asciinema
 	let elementsToRemove = slide.querySelectorAll('[data-farberg-asciinema]')
-	console.log("Removing", elementsToRemove.length, "elements with attribute data-farberg-asciinema")
+	//console.log("Removing", elementsToRemove.length, "elements with attribute data-farberg-asciinema")
 
 	for (let el of elementsToRemove)
 		el.parentNode.removeChild(el)
 
 	//destroy players
-	console.log("Destroying", players.length, "players")
+	//console.log("Destroying", players.length, "players")
 	players.forEach(player => player.dispose())
 }
 

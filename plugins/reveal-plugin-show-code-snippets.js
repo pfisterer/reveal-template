@@ -68,13 +68,18 @@ function extractBeginEndSnippet(code, beginMarker, endMarker) {
 }
 
 export default () => {
-
 	return {
 		id: 'show_code_snippets',
 		init: (deck) => {
 
-			deck.on('ready', () => {
+			deck.on('ready', async () => {
 				const highlightPlugin = deck.getPlugin("highlight")
+
+				highlightPlugin.hljs.configure({
+					// This suppresses the specific console warning you are seeing
+					ignoreUnescapedHTML: true
+				});
+
 
 				for (let el of deck.getRevealElement().querySelectorAll("a[data-code]")) {
 					//console.log(`Loading code snippets, looking at`, el)
@@ -88,25 +93,24 @@ export default () => {
 					//console.log(`language = ${language}, url = ${url}, beginMarker = ${beginMarker}, endMarker = ${endMarker}, showLink = ${showLink} `)
 
 					if (url) {
-						fetch(url, { "cache": "no-store" })
-							.then(response => response.text()).then(text => {
-								let code = extractBeginEndSnippet(text, beginMarker, endMarker)
+						const response = await fetch(url, { "cache": "no-store" })
+						const text = await response.text()
+						let code = extractBeginEndSnippet(text, beginMarker, endMarker)
 
-								if (outdentCode)
-									code = outdent(code)
+						if (outdentCode)
+							code = outdent(code)
 
-								/* const newEl = */ showCode(el, language, code, showLink ? url : null, outdent)
-								//highlightPlugin.highlightElement(newEl)
-								highlightPlugin.hljs.highlightAll()
-							}).catch(err => {
-								showError(el, err)
-							})
+						const newEl = showCode(el, language, code, showLink ? url : null, outdent)
+						highlightPlugin.hljs.highlightElement(newEl)
+
 					} else {
 						showError(el, "No URL provided in elements innerText")
 					}
 				}
 
+
 			})
+
 
 		}
 	}

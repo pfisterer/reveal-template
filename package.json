@@ -1,6 +1,6 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "1.1.6",
+  "version": "1.1.9",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
   "main": "index.js",
@@ -24,6 +24,8 @@
     "pdf-merger-js": "^5.1.2",
     "puppeteer": "^24.6.0",
     "reveal.js": "^5.2.1",
-    "serve-static": "^2.2.0"
+    "serve-static": "^2.2.0",
+    "@fortawesome/fontawesome-free": "^6.4.1",
+    "reveal.js-plugins": "^4.6.0"
   }
 }

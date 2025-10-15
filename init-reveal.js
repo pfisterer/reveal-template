@@ -27,15 +27,19 @@ const externalJsLibs = [
 	'node_modules/easyqrcodejs/dist/easy.qrcode.min.js',
 	'node_modules/file-saver/dist/FileSaver.min.js',
 	'node_modules/jszip/dist/jszip.min.js',
-	//'node_modules/reveal.js-plugins/chalkboard/plugin.js',
-	'node_modules/asciinema-player/dist/bundle/asciinema-player.min.js'
+	'node_modules/asciinema-player/dist/bundle/asciinema-player.min.js',
+	'node_modules/reveal.js-plugins/customcontrols/plugin.js',
+	'node_modules/reveal.js-plugins/chalkboard/plugin.js',
+	'node_modules/@fortawesome/fontawesome-free/js/all.min.js'
 ]
 
 const extraStylesheets = [
 	{ href: 'node_modules/reveal.js/dist/reveal.css' },
 	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
-	//{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
-	{ href: 'node_modules/asciinema-player/dist/bundle/asciinema-player.css' }
+	{ href: 'node_modules/asciinema-player/dist/bundle/asciinema-player.css' },
+	{ href: 'node_modules/reveal.js-plugins/customcontrols/style.css' },
+	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
+	{ href: 'node_modules/@fortawesome/fontawesome-free/css/all.min.css' },
 ]
 
 const extraThemeCssStylesheets = [
@@ -68,6 +72,12 @@ const defaultRevealOptions = {
 	//Markdown config
 	markdown: {
 		smartypants: true,
+	},
+	chalkboard: {
+		boardmarkerWidth: 2,
+		chalkWidth: 3,
+		chalkEffect: 0.4,
+		theme: "chalkboard" // or "whiteboard"
 	},
 	keyboard: {
 		33: function () { Reveal.left(); }, // Don't go up using the presenter
@@ -210,8 +220,9 @@ export function initReveal(opts) {
 			finalOptions.plugins = [
 				...modules,
 				...defaultDennisPlugins,
-				//window.RevealChalkboard,
-				...finalOptions.plugins
+				...finalOptions.plugins,
+				RevealChalkboard,
+				RevealCustomControls
 			]
 
 			if (options.verbose)
