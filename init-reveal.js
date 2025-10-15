@@ -77,7 +77,16 @@ const defaultRevealOptions = {
 		boardmarkerWidth: 2,
 		chalkWidth: 3,
 		chalkEffect: 0.4,
-		theme: "chalkboard" // or "whiteboard"
+		theme: "chalkboard", // or "whiteboard"
+		grid: { color: 'rgb(50,50,10,0.5)', distance: 100, width: 3 },
+		boardmarkers: [
+			{ color: 'rgba(225, 2, 23, 1)' },
+			{ color: 'rgba(100,100,100,1)' },
+		],
+		chalks: [
+			{ color: 'rgba(225, 2, 23, 0.6)' },
+			{ color: 'rgba(100,100,100,0.6)' },
+		]
 	},
 	keyboard: {
 		33: function () { Reveal.left(); }, // Don't go up using the presenter
