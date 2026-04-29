@@ -2,12 +2,15 @@ const fs = require('fs');
 
 module.exports.combined_pdf = function (package_json) {
 
+	// Extract shortnames and join with " and "
 	let authorBlock = package_json.authors.map(entry => {
 		return entry.shortname || entry.name || "unknown"
 	}).join(" and ")
 
-	const combined_pdf_name = `${package_json.description} - ${authorBlock}`
-		.replace(/[^\w- ]/gi, '') + ".pdf"
+	// Match the bash logic: Title - Shortnames.pdf
+	// Note: We avoid the regex replacement unless you specifically want 
+	// to strip the " - " separator we just added.
+	const combined_pdf_name = `${package_json.title} - ${authorBlock}.pdf`
 
 	return combined_pdf_name
 }

@@ -35,7 +35,7 @@ const externalJsLibs = [
 
 const extraStylesheets = [
 	{ href: 'node_modules/reveal.js/dist/reveal.css' },
-	{ href: 'node_modules/reveal.js/plugin/highlight/zenburn.css' },
+	{ href: 'node_modules/reveal.js/dist/plugin/highlight/zenburn.css' },
 	{ href: 'node_modules/asciinema-player/dist/bundle/asciinema-player.css' },
 	{ href: 'node_modules/reveal.js-plugins/customcontrols/style.css' },
 	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
@@ -126,19 +126,19 @@ function windowOnLoadPromise() {
 // Load reveal and its plugins
 function loadRevealAndPlugins(options) {
 	const imports = [
-		"dist/reveal.esm.js" /*must be the first one*/,
-		"plugin/markdown/markdown.esm.js",
-		"plugin/highlight/highlight.esm.js",
-		"plugin/search/search.esm.js",
-		"plugin/notes/notes.esm.js",
-		"plugin/math/math.esm.js",
-		"plugin/zoom/zoom.esm.js"
+		"dist/reveal.mjs" /*must be the first one*/,
+		"dist/plugin/markdown.mjs",
+		"dist/plugin/highlight.mjs",
+		"dist/plugin/search.mjs",
+		"dist/plugin/notes.mjs",
+		"dist/plugin/math.mjs",
+		"dist/plugin/zoom.mjs"
 	]
 
 	if (options.verbose)
 		console.log("Importing the following plugins: ", imports)
 
-	return Promise.all(imports.map(i => import(options.revealPath + "/" + i)))
+	return Promise.all(imports.map(i => import(options.revealPath + i)))
 }
 
 // Add js tags to the header and resolve

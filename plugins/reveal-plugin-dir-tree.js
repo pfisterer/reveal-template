@@ -57,15 +57,24 @@ const dir_tree = {
 		}
 
 		function download(files, zipName) {
-			Promise.all(files.map(file => fetch(file)))
-				.then(promises => Promise.all(promises.map(p => p.text()))
-					.then(values => {
-						var zip = new JSZip();
-						values.forEach((text, idx) => zip.file(files[idx], text))
-						zip.generateAsync({ type: "blob" }).then(blob => {
-							saveAs(blob, zipName);
+			Promise.all(files.map(file => fetch(file, { "credentials": "include" })))
+				.then(promises => {
+					// Check for 401 responses
+					const hasUnauthorized = promises.some(p => p.status === 401);
+					if (hasUnauthorized) {
+						console.log("Authentication required (dir-tree), reloading page");
+						window.location.reload();
+						return;
+					}
+					return Promise.all(promises.map(p => p.text()))
+						.then(values => {
+							var zip = new JSZip();
+							values.forEach((text, idx) => zip.file(files[idx], text))
+							zip.generateAsync({ type: "blob" }).then(blob => {
+								saveAs(blob, zipName);
+							})
 						})
-					}))
+				})
 
 		}
 

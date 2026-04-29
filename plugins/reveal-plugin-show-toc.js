@@ -14,9 +14,18 @@
  */
 
 function showToc(url, el) {
-	fetch(url, { "cache": "no-store" })
-		.then(res => res.text())
-		.then(html => el.innerHTML = html)
+	fetch(url, { "cache": "no-store", "credentials": "include" })
+		.then(res => {
+			if (res.status === 401) {
+				console.log("Authentication required (show-toc), reloading page");
+				window.location.reload();
+				return;
+			}
+			return res.text();
+		})
+		.then(html => {
+			if (html) el.innerHTML = html
+		})
 		.catch(e => console.log(`Unable to load TOC from ${url}`, e))
 }
 

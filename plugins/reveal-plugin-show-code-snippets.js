@@ -93,7 +93,12 @@ export default () => {
 					//console.log(`language = ${language}, url = ${url}, beginMarker = ${beginMarker}, endMarker = ${endMarker}, showLink = ${showLink} `)
 
 					if (url) {
-						const response = await fetch(url, { "cache": "no-store" })
+						const response = await fetch(url, { "cache": "no-store", "credentials": "include" })
+						if (response.status === 401) {
+							console.log("Authentication required (show-code-snippets), reloading page");
+							window.location.reload();
+							return;
+						}
 						const text = await response.text()
 						let code = extractBeginEndSnippet(text, beginMarker, endMarker)
 

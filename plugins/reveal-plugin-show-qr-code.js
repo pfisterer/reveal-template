@@ -50,9 +50,18 @@ export default () => {
 			deck.on('ready', () => {
 				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json || new URL('package.json', window.location)
 				if (info_json_url)
-					fetch(info_json_url.href, { "cache": "no-store" })
-						.then(res => res.json())
-						.then(json => showLinkToSlidesAndQrCode(deck, json.homepage))
+					fetch(info_json_url.href, { "cache": "no-store", "credentials": "include" })
+						.then(res => {
+							if (res.status === 401) {
+								console.log("Authentication required, reloading page");
+								window.location.reload();
+								return;
+							}
+							return res.json();
+						})
+						.then(json => {
+							if (json) showLinkToSlidesAndQrCode(deck, json.homepage)
+						})
 						.catch(err => console.log("Error fetching info json", err))
 				else
 					console.log("show_qr_code: no URL available @ farberg_reveal_template.info_json")

@@ -53,9 +53,18 @@ export default () => {
 			deck.on('ready', () => {
 				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json || new URL('package.json', window.location)
 				if (info_json_url)
-					fetch(info_json_url.href, { "cache": "no-store" })
-						.then(response => response.json())
-						.then(packageJson => showTitle(deck, packageJson));
+					fetch(info_json_url.href, { "cache": "no-store", "credentials": "include" })
+						.then(res => {
+							if (res.status === 401) {
+								console.log("Authentication required (show-title), reloading page");
+								window.location.reload();
+								return;
+							}
+							return res.json();
+						})
+						.then(packageJson => {
+							if (packageJson) showTitle(deck, packageJson)
+						});
 				else
 					console.log("show_title: no URL available @ farberg_reveal_template.info_json")
 			})
