@@ -92,24 +92,39 @@ export default () => {
 
 					//console.log(`language = ${language}, url = ${url}, beginMarker = ${beginMarker}, endMarker = ${endMarker}, showLink = ${showLink} `)
 
-					if (url) {
-						const response = await fetch(url, { "cache": "no-store", "credentials": "include" })
+					if (!url) {
+						showError(el, "No URL provided in elements innerText")
+						continue
+					}
+
+					try {
+						const sameOrigin = new URL(url, window.location.href).origin === window.location.origin
+						const response = await fetch(url, { "cache": "no-store", "credentials": sameOrigin ? "include" : "omit" })
 						if (response.status === 401) {
 							console.log("Authentication required (show-code-snippets), reloading page");
 							window.location.reload();
 							return;
 						}
+						if (!response.ok) {
+							showError(el, `HTTP ${response.status} loading ${url}`)
+							continue
+						}
 						const text = await response.text()
 						let code = extractBeginEndSnippet(text, beginMarker, endMarker)
+
+						if (!code) {
+							showError(el, `No content extracted from ${url} (begin=${beginMarker}, end=${endMarker})`)
+							continue
+						}
 
 						if (outdentCode)
 							code = outdent(code)
 
 						const newEl = showCode(el, language, code, showLink ? url : null, outdent)
 						highlightPlugin.hljs.highlightElement(newEl)
-
-					} else {
-						showError(el, "No URL provided in elements innerText")
+					} catch (err) {
+						console.error(`show-code-snippets: failed to load ${url}:`, err)
+						showError(el, `Failed to load ${url}: ${err.message}`)
 					}
 				}
 

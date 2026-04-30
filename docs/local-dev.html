@@ -22,6 +22,21 @@
 
 <body>
 	<div class="reveal">
-		<div class="slides"></div>
+		<div class="slides">
+			<section data-markdown>
+				<textarea data-template>
+## Gateway API
+
+```mermaid
+graph LR
+    GWC[GatewayClass] -->|implemented by| Ctrl[Controller]
+    GW[Gateway] -->|references| GWC
+    Route[HTTPRoute] -->|attaches to| GW
+    Route -->|routes to| SvcA[Service A]
+    Route -->|routes to| SvcB[Service B]
+```
+				</textarea>
+			</section>
+		</div>
 	</div>
 </body>
