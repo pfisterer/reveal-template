@@ -4,19 +4,19 @@ section.has-dark-background, section.has-dark-background h1, section.has-dark-ba
 
 /* https://github.com/hakimel/reveal.js/issues/1279 : data-state="dim-background" */
 html.dim-background-light .slide-background {
-    opacity: 0.4 !important;
+  opacity: 0.4 !important;
 }
 
 html.dim-background .slide-background {
-    opacity: 0.2 !important;
+  opacity: 0.2 !important;
 }
 
 html.dim-background-medium .slide-background {
-    opacity: 0.1 !important;
+  opacity: 0.1 !important;
 }
 
 html.dim-background-strong .slide-background {
-    opacity: 0.05 !important;
+  opacity: 0.05 !important;
 }
 
 /*********************************************
@@ -33,7 +33,8 @@ body {
   font-size: 33px;
   font-weight: normal;
   /* color: #222; */
-  color: #4e565c; /* was #4e565c */
+  color: #4e565c;
+  /* was #4e565c */
 }
 
 ::selection {
@@ -75,8 +76,8 @@ body {
 }
 
 .reveal h2 {
-   font-size: 1.5em;
-   padding-bottom: 5px;
+  font-size: 1.5em;
+  padding-bottom: 5px;
 }
 
 .reveal h3 {
@@ -134,7 +135,8 @@ body {
 }
 
 .reveal ol li {
-  color: #000000; /* was #000000 */
+  color: #000000;
+  /* was #000000 */
   font-size: 90%;
   margin-top: 0em;
 }
@@ -147,7 +149,8 @@ body {
 }
 
 .reveal ul li {
-  color: #000000; /* was #000000 */
+  color: #000000;
+  /* was #000000 */
   font-size: 90%;
   margin-top: 0em;
   margin-bottom: 0.5em;
@@ -258,6 +261,18 @@ body {
   word-wrap: normal;
   background: #3F3F3F;
   color: #DCDCDC;
+}
+
+.reveal code.language-mermaid,
+.reveal pre code.language-mermaid,
+.reveal code.mermaid,
+.reveal pre code.mermaid {
+  background: transparent !important;
+}
+
+.reveal pre.code-wrapper:has(> code.mermaid) {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .reveal table {
@@ -466,11 +481,11 @@ right50transparentbox {
  *********************************************/
 
 .solution {
-    display: none !important;
+  display: none !important;
 }
 
 .solutionvisible {
-    display: unset !important;
+  display: unset !important;
 }
 
 /*********************************************
@@ -481,16 +496,16 @@ right50transparentbox {
   border-bottom: 0.1px dotted rgb(198, 198, 198) !important;
 }
 
-.toc_tr_chapter  td {
+.toc_tr_chapter td {
   border-bottom: 1px solid black !important;
   border-top: 1px solid black !important;
 }
 
-.toc_table  tr:last-of-type {
+.toc_table tr:last-of-type {
   border-bottom: 1px solid black !important;
 }
 
-tr > tr:first-of-type {
+tr>tr:first-of-type {
   border-top: 1px solid black !important;
 }
 
@@ -515,36 +530,39 @@ tr > tr:first-of-type {
 }
 
 credits {
-	visibility: hidden;
+  visibility: hidden;
 }
 
 /* Credits Dennis */
 
 attribution {
-	position: absolute !important;
-	/* display: block; */
-	display: table-cell !important;
-	vertical-align: middle !important;
-	right: 35px;
-	bottom: 8px;
-	height: 22px;
-	z-index: 200;
-	font-size: 12px;
-	text-align: right;
+  position: absolute !important;
+  /* display: block; */
+  display: table-cell !important;
+  vertical-align: middle !important;
+  right: 35px;
+  bottom: 8px;
+  height: 22px;
+  z-index: 200;
+  font-size: 12px;
+  text-align: right;
   color: #4e565c;
   background-color: rgba(0, 0, 0, 0.4);
 }
-attribution > span {
-	padding-left: 5px !important;
-	padding-right: 5px !important;
-	line-height: 22px !important;
+
+attribution>span {
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  line-height: 22px !important;
 }
+
 attribution a {
-	font-size: 12px;
+  font-size: 12px;
   color: #4e565c;
 }
+
 attribution a:visited {
-	font-size: 12px;
+  font-size: 12px;
   color: #4e565c;
 }
 
@@ -577,85 +595,85 @@ attribution a:visited {
 /** Dirtree plugin */
 
 ul.dirtree {
-			text-indent: 0;
-			margin: 0px 0px 0px 20px;
-			padding: 0;
-			list-style: none;
-			line-height: 1.5em;
-			font-family: monospace;
+  text-indent: 0;
+  margin: 0px 0px 0px 20px;
+  padding: 0;
+  list-style: none;
+  line-height: 1.5em;
+  font-family: monospace;
 
-			list-style-type: none;
-			margin-block-start: 0;
-			margin-block-end: 0;
-			margin-inline-start: 0px;
-			margin-inline-end: 0px;
-			padding-inline-start: 0;
-		}
+  list-style-type: none;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  padding-inline-start: 0;
+}
 
-		ul.dirtree li.dirtree {
-			list-style-type: none;
-			display: list-item;
-			text-indent: 0;
-			padding: 0;
-			margin-bottom: 0;
-			margin-top: 0;
-			font-size: 16px;
-			position: relative;
-		}
+ul.dirtree li.dirtree {
+  list-style-type: none;
+  display: list-item;
+  text-indent: 0;
+  padding: 0;
+  margin-bottom: 0;
+  margin-top: 0;
+  font-size: 16px;
+  position: relative;
+}
 
-		ul.dirtree li.dirtree:before {
-			position: absolute;
-			left: -15px;
-			top: 0px;
-			content: "" !important;
-			display: block;
-			border-left: 1px solid #ddd;
-			height: 1em;
-			border-bottom: 1px solid #ddd;
-			width: 10px;
-		}
+ul.dirtree li.dirtree:before {
+  position: absolute;
+  left: -15px;
+  top: 0px;
+  content: "" !important;
+  display: block;
+  border-left: 1px solid #ddd;
+  height: 1em;
+  border-bottom: 1px solid #ddd;
+  width: 10px;
+}
 
-		ul.dirtree li.dirtree:after {
-			position: absolute;
-			left: -15px;
-			bottom: -7px;
-			content: "";
-			display: block;
-			border-left: 1px solid #ddd;
-			height: 100%;
-		}
+ul.dirtree li.dirtree:after {
+  position: absolute;
+  left: -15px;
+  bottom: -7px;
+  content: "";
+  display: block;
+  border-left: 1px solid #ddd;
+  height: 100%;
+}
 
-		ul.dirtree li.root {
-			margin: 0px 0px 0px -20px;
-			padding: 0;
-			padding-left: 20px;
-		}
+ul.dirtree li.root {
+  margin: 0px 0px 0px -20px;
+  padding: 0;
+  padding-left: 20px;
+}
 
-		ul.dirtree li.root:before {
-			display: none;
-		}
+ul.dirtree li.root:before {
+  display: none;
+}
 
-		ul.dirtree li.root:after {
-			display: none;
-		}
+ul.dirtree li.root:after {
+  display: none;
+}
 
-		ul.dirtree li.dirtree:last-child:after {
-			display: none;
-		}
+ul.dirtree li.dirtree:last-child:after {
+  display: none;
+}
 
-		ul.dirtree ul li {
-			margin-left: 0;
-			padding: 0;
-		}
+ul.dirtree ul li {
+  margin-left: 0;
+  padding: 0;
+}
 
-		ul.dirtree ul ul li {
-			margin-left: 0;
-			padding: 0;
-		}
+ul.dirtree ul ul li {
+  margin-left: 0;
+  padding: 0;
+}
 
-		ul.dirtree ul ul ul li {
-			margin-left: 0;
-			padding: 0;
-    }
-    
-    /** Dirtree plugin: end */
+ul.dirtree ul ul ul li {
+  margin-left: 0;
+  padding: 0;
+}
+
+/** Dirtree plugin: end */

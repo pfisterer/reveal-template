@@ -10,7 +10,6 @@ import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
 import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
-import MermaidPlugin from './plugins/reveal-plugin-mermaid.js';
 
 const defaultOptions = {
 	revealOptions: {},
@@ -30,7 +29,8 @@ const externalJsLibs = [
 	'node_modules/asciinema-player/dist/bundle/asciinema-player.min.js',
 	'node_modules/reveal.js-plugins/customcontrols/plugin.js',
 	'node_modules/reveal.js-plugins/chalkboard/plugin.js',
-	'node_modules/@fortawesome/fontawesome-free/js/all.min.js'
+	'node_modules/@fortawesome/fontawesome-free/js/all.min.js',
+	'node_modules/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.js'
 ]
 
 const extraStylesheets = [
@@ -50,7 +50,7 @@ const extraThemeCssStylesheets = [
 const defaultDennisPlugins = [
 	ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle,
 	ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin,
-	PrefixUrlPlugin, AsciinemaPlugin, MermaidPlugin
+	PrefixUrlPlugin, AsciinemaPlugin
 ]
 
 const defaultRevealOptions = {
@@ -72,6 +72,10 @@ const defaultRevealOptions = {
 	//Markdown config
 	markdown: {
 		smartypants: true,
+	},
+	// Disable automatic hljs; show-code-snippets calls hljs manually per element
+	highlight: {
+		highlightOnLoad: false
 	},
 	chalkboard: {
 		boardmarkerWidth: 2,
@@ -99,6 +103,26 @@ const defaultRevealOptions = {
 
 	// Factor of the display size that should remain empty around the content
 	margin: 0.05,
+
+	// reveal.js-mermaid-plugin config (passed to mermaid.initialize)
+	mermaid: {
+		theme: 'base',
+		fontSize: 13,
+		themeVariables: {
+			textColor: '#000',
+			primaryColor: '#e2001a',
+			primaryTextColor: '#ffff',
+			noteBkgColor: '#ededeb',
+			fontFamily: 'arial',
+			lineColor: '#5c6971',
+			primaryBorderColor: '#5c6971',
+			secondaryColor: '#5c6971',
+			secondaryTextColor: '#000'
+		},
+		sequence: { mirrorActors: false, useMaxWidth: true },
+		flowchart: { useMaxWidth: true, padding: 6 }
+	},
+
 	// Leave here
 	plugins: []
 }
@@ -208,7 +232,7 @@ export function initReveal(opts) {
 		addCssDependencies(options, extraStylesheets, extraThemeCssStylesheets),
 		addPrintStylesheetIfUrlContainsPrintPdf(),
 		windowOnLoadPromise()
-	]).then(values => {
+	]).then(async values => {
 		//Get the first element from the array, this is the Reveal module
 		const modules = values[0].map(m => m.default)
 		const Reveal = modules.shift();
@@ -230,6 +254,7 @@ export function initReveal(opts) {
 				...modules,
 				...defaultDennisPlugins,
 				...finalOptions.plugins,
+				RevealMermaid,
 				RevealChalkboard,
 				RevealCustomControls
 			]

@@ -80,6 +80,17 @@ export default () => {
 					ignoreUnescapedHTML: true
 				});
 
+				// highlightOnLoad is false (to avoid double-highlighting external code snippets
+				// loaded below). Manually highlight all inline markdown code blocks here.
+				// The reveal.js markdown plugin sets class="mermaid" (no "language-" prefix) for
+				// mermaid fences. RevealMermaid already rendered those elements before the ready
+				// event fired, so we must skip them — otherwise hljs reads the SVG innerHTML as
+				// code text and overwrites the rendered diagram.
+				for (let el of deck.getRevealElement().querySelectorAll("pre code[class]")) {
+					if (!el.classList.contains("mermaid")) {
+						highlightPlugin.hljs.highlightElement(el);
+					}
+				}
 
 				for (let el of deck.getRevealElement().querySelectorAll("a[data-code]")) {
 					//console.log(`Loading code snippets, looking at`, el)
@@ -121,7 +132,8 @@ export default () => {
 							code = outdent(code)
 
 						const newEl = showCode(el, language, code, showLink ? url : null, outdent)
-						highlightPlugin.hljs.highlightElement(newEl)
+						if (language !== 'mermaid')
+							highlightPlugin.hljs.highlightElement(newEl.querySelector('code') ?? newEl)
 					} catch (err) {
 						console.error(`show-code-snippets: failed to load ${url}:`, err)
 						showError(el, `Failed to load ${url}: ${err.message}`)
