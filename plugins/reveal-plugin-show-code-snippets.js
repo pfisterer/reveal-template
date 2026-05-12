@@ -105,21 +105,43 @@ function injectStyles() {
 	document.head.appendChild(style);
 }
 
+function writeToClipboard(text) {
+	if (navigator.clipboard && navigator.clipboard.writeText)
+		return navigator.clipboard.writeText(text);
+	const ta = document.createElement('textarea');
+	ta.value = text;
+	ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+	document.body.appendChild(ta);
+	ta.focus();
+	ta.select();
+	try {
+		document.execCommand('copy');
+		return Promise.resolve();
+	} catch (e) {
+		return Promise.reject(e);
+	} finally {
+		document.body.removeChild(ta);
+	}
+}
+
 function addCopyButton(preEl) {
 	preEl.classList.add('with-copy-btn');
 	const btn = document.createElement('button');
 	btn.className = 'copy-code-btn';
-	btn.textContent = 'Copy';
+	btn.textContent = 'copy';
 	btn.addEventListener('click', () => {
 		const code = preEl.querySelector('code');
 		const text = code ? code.innerText : preEl.innerText;
-		navigator.clipboard.writeText(text).then(() => {
-			btn.textContent = 'Copied!';
+		writeToClipboard(text).then(() => {
+			btn.textContent = '✓ copied';
 			btn.classList.add('copied');
 			setTimeout(() => {
-				btn.textContent = 'Copy';
+				btn.textContent = 'copy';
 				btn.classList.remove('copied');
 			}, 1500);
+		}).catch(() => {
+			btn.textContent = '✗ error';
+			setTimeout(() => { btn.textContent = 'copy'; }, 1500);
 		});
 	});
 	preEl.appendChild(btn);
@@ -148,6 +170,7 @@ export default () => {
 				for (let el of deck.getRevealElement().querySelectorAll("pre code[class]")) {
 					if (!el.classList.contains("mermaid")) {
 						highlightPlugin.hljs.highlightElement(el);
+						addCopyButton(el.closest('pre'));
 					}
 				}
 
@@ -191,8 +214,10 @@ export default () => {
 							code = outdent(code)
 
 						const newEl = showCode(el, language, code, showLink ? url : null, outdent)
-						if (language !== 'mermaid')
+						if (language !== 'mermaid') {
 							highlightPlugin.hljs.highlightElement(newEl.querySelector('code') ?? newEl)
+							addCopyButton(newEl)
+						}
 					} catch (err) {
 						console.error(`show-code-snippets: failed to load ${url}:`, err)
 						showError(el, `Failed to load ${url}: ${err.message}`)
