@@ -67,10 +67,69 @@ function extractBeginEndSnippet(code, beginMarker, endMarker) {
 	return out.trim();
 }
 
+function injectStyles() {
+	const style = document.createElement('style');
+	style.textContent = `
+		pre.with-copy-btn {
+			position: relative;
+		}
+		.copy-code-btn {
+			position: absolute;
+			top: 0.4em;
+			right: 0.4em;
+			padding: 0.2em 0.5em;
+			font-size: 0.75em;
+			font-family: sans-serif;
+			background: rgba(255, 255, 255, 0.15);
+			color: #ccc;
+			border: 1px solid rgba(255, 255, 255, 0.25);
+			border-radius: 4px;
+			cursor: pointer;
+			opacity: 0;
+			transition: opacity 0.15s ease, background 0.15s ease;
+			z-index: 10;
+			line-height: 1.4;
+		}
+		pre.with-copy-btn:hover .copy-code-btn {
+			opacity: 1;
+		}
+		.copy-code-btn:hover {
+			background: rgba(255, 255, 255, 0.3);
+			color: #fff;
+		}
+		.copy-code-btn.copied {
+			color: #4caf50;
+			border-color: #4caf50;
+		}
+	`;
+	document.head.appendChild(style);
+}
+
+function addCopyButton(preEl) {
+	preEl.classList.add('with-copy-btn');
+	const btn = document.createElement('button');
+	btn.className = 'copy-code-btn';
+	btn.textContent = 'Copy';
+	btn.addEventListener('click', () => {
+		const code = preEl.querySelector('code');
+		const text = code ? code.innerText : preEl.innerText;
+		navigator.clipboard.writeText(text).then(() => {
+			btn.textContent = 'Copied!';
+			btn.classList.add('copied');
+			setTimeout(() => {
+				btn.textContent = 'Copy';
+				btn.classList.remove('copied');
+			}, 1500);
+		});
+	});
+	preEl.appendChild(btn);
+}
+
 export default () => {
 	return {
 		id: 'show_code_snippets',
 		init: (deck) => {
+			injectStyles();
 
 			deck.on('ready', async () => {
 				const highlightPlugin = deck.getPlugin("highlight")
