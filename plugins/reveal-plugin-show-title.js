@@ -28,12 +28,19 @@ function showTitle(deck, packageJson) {
 		let slideTitle = el.innerText;
 
 		// Mark the enclosing slide so simplemenu hides on it (handled in dhbw.css
-		// via body.hide-menubar) and give it a menu-label for any contexts that
-		// still read data-name. Equivalent to writing in the markdown:
+		// via body.hide-menubar). Equivalent to writing in the markdown:
 		//   <!-- .slide: data-state="hide-menubar" -->
+		// Reveal mirrors data-state to body classes on every slidechanged event.
+		// We're running here in the 'ready' callback — after the first
+		// slidechanged has already fired during init — so for the *current*
+		// slide we also need to apply the body class manually. Subsequent
+		// navigations are then handled by Reveal automatically.
 		const section = el.closest('section');
 		if (section) {
 			section.setAttribute('data-state', 'hide-menubar');
+			if (section === deck.getCurrentSlide()) {
+				document.body.classList.add('hide-menubar');
+			}
 		}
 
 		el.innerHTML = `
