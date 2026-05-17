@@ -659,6 +659,19 @@ attribution a:visited {
   -webkit-text-stroke: 0.4px currentColor !important;
 }
 
+/* Suppress the browser's blue focus ring left on the link after a mouse
+   click, while keeping it for keyboard navigation (:focus-visible). */
+.menubar a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Slides marked with data-state="hide-menubar" (e.g. the title slide)
+   hide the simplemenu strip while they are active. Reveal mirrors the
+   data-state value onto <body> as a class while the slide is showing. */
+body.hide-menubar .menubar {
+  display: none !important;
+}
+
 .source-code-link {
   width: 99%;
   text-align: right;

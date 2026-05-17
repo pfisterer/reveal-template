@@ -27,13 +27,22 @@ function showTitle(deck, packageJson) {
 	for (let el of deck.getSlidesElement().getElementsByClassName("lecturetitle")) {
 		let slideTitle = el.innerText;
 
+		// Mark the enclosing slide so simplemenu hides on it (handled in dhbw.css
+		// via body.hide-menubar) and give it a menu-label for any contexts that
+		// still read data-name. Equivalent to writing in the markdown:
+		//   <!-- .slide: data-state="hide-menubar" -->
+		const section = el.closest('section');
+		if (section) {
+			section.setAttribute('data-state', 'hide-menubar');
+		}
+
 		el.innerHTML = `
 				<div style="height: 120px;"></div>
 					<h1>${lectureTitle}</h1>
 					<h3>${slideTitle}</h3>
-	
+
 					<div style="height: 170px;"></div>
-					
+
 					<div style="font-size: .7em; font-weight: bold;">
 						${authorBlock}
 						<br/><br/>
