@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -8,13 +9,27 @@
 	<meta name="viewport"
 		content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, minimal-ui">
 
+	<!--
+		Local-dev variant using an import map so the JS imports the package by its
+		bare specifier ("@farberg/reveal-template/init-reveal.js") rather than a
+		relative path. This mirrors how a bundler (Vite, Rollup) resolves it, and
+		makes migration to a bundler a no-op for this file.
+
+		The import map remaps the bare prefix to "../" (the repo root, since
+		this HTML lives in docs/). basePath stays "../" because that's where
+		node_modules lives relative to this document.
+	-->
+	<script type="importmap">
+	{
+		"imports": {
+			"@farberg/reveal-template/": "../"
+		}
+	}
+	</script>
 	<script type="module">
-		import { initReveal } from '../init-reveal.js'
+		import { initReveal } from '@farberg/reveal-template/init-reveal.js'
 		initReveal({
-			jsPrefixPath: "../",
-			cssPrefixPath: "../",
-			cssThemePrefixPath: "../",
-			revealPath: "../node_modules/reveal.js/",
+			basePath: "../",
 			verbose: true
 		});
 	</script>
@@ -23,10 +38,6 @@
 <body>
 	<div class="reveal">
 		<div class="slides">
-			<section data-markdown>
-				<textarea data-template>
-				</textarea>
-			</section>
 		</div>
 	</div>
 </body>

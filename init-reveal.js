@@ -11,52 +11,75 @@ import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
 
+// All third-party paths below are written as bare-package specifiers
+// (e.g. "reveal.js/dist/reveal.mjs"). At runtime they are resolved to
+// `${basePath}node_modules/${pkgPath}`. When migrating to a bundler
+// (Vite, etc.), these same strings can be used directly as import
+// specifiers — drop the toUrl() prefixing and they Just Work.
 
-const externalEsmLibs = [
-	{ src: 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js', global: 'Simplemenu' }
+const revealEsmModules = [
+	'reveal.js/dist/reveal.mjs', // must be first
+	'reveal.js/dist/plugin/markdown.mjs',
+	'reveal.js/dist/plugin/highlight.mjs',
+	'reveal.js/dist/plugin/search.mjs',
+	'reveal.js/dist/plugin/notes.mjs',
+	'reveal.js/dist/plugin/math.mjs',
+	'reveal.js/dist/plugin/zoom.mjs'
 ]
+
+// Third-party ESM deps loaded dynamically via import(). Awaited in parallel.
+// `isPlugin: true` means the module's default export is a Reveal plugin and
+// gets registered automatically; otherwise it's a library injected into a
+// Dennis-plugin factory (see buildDennisPlugins).
+const esmDeps = {
+	qrCreator: { path: 'qr-creator/dist/qr-creator.es6.min.js' },
+	fflate: { path: 'fflate/esm/browser.js' },
+	asciinemaPlayer: { path: 'asciinema-player/dist/index.js' },
+	revealMermaid: { path: 'reveal.js-mermaid-plugin/plugin/mermaid/mermaid.esm.js', isPlugin: true },
+	simplemenu: { path: 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js', isPlugin: true }
+}
+
+// Classic-script deps that publish themselves on `window` and have no ESM build.
+// These are awaited via the script `load` event so their globals are defined
+// before Reveal.initialize is called.
+const externalJsLibs = [
+	'reveal.js-plugins/customcontrols/plugin.js', // → window.RevealCustomControls
+	'reveal.js-plugins/chalkboard/plugin.js'      // → window.RevealChalkboard
+]
+
+const extraStylesheets = [
+	{ href: 'reveal.js/dist/reveal.css' },
+	{ href: 'reveal.js/dist/plugin/highlight/zenburn.css' },
+	{ href: 'asciinema-player/dist/bundle/asciinema-player.css' },
+	{ href: 'reveal.js-plugins/customcontrols/style.css' },
+	{ href: 'reveal.js-plugins/chalkboard/style.css' },
+	{ href: '@fortawesome/fontawesome-free/css/all.min.css' }
+]
+
+// Package-owned assets (theme + print CSS) live inside this package, NOT under
+// node_modules. They're always co-located with init-reveal.js — in local dev
+// that's the repo root, in an npm install it's node_modules/@farberg/reveal-template/.
+// Resolving against import.meta.url handles both cases identically and is the
+// standard bundler-friendly pattern for package assets.
+const defaultThemeCss = [
+	{ href: new URL('./css/dhbw.css', import.meta.url).href, id: 'theme' }
+]
+
+const printStylesheet = new URL('./css/dhbw-print.css', import.meta.url).href
 
 const defaultOptions = {
 	revealOptions: {},
-	revealPath: "../../reveal.js/",
-	jsPrefixPath: "",
-	cssPrefixPath: "",
-	cssThemePrefixPath: "node_modules/@farberg/reveal-template/",
+	// Path prefix to the directory containing node_modules/, relative to the HTML.
+	// Examples: "" (HTML next to node_modules), "../" (HTML one level down).
+	basePath: "",
+	// Theme stylesheets. Defaults to this package's dhbw.css (resolved against
+	// import.meta.url so it works in both local-dev and npm-install layouts).
+	// Override with absolute or document-relative URLs to swap themes.
+	themeCss: defaultThemeCss,
 	slidesDestinationElement: document.querySelector("body div.reveal div.slides"),
 	indexDocument: "00 - Introduction.md",
 	verbose: false
 }
-
-const externalJsLibs = [
-	'node_modules/easyqrcodejs/dist/easy.qrcode.min.js',
-	'node_modules/file-saver/dist/FileSaver.min.js',
-	'node_modules/jszip/dist/jszip.min.js',
-	'node_modules/asciinema-player/dist/bundle/asciinema-player.min.js',
-	'node_modules/reveal.js-plugins/customcontrols/plugin.js',
-	'node_modules/reveal.js-plugins/chalkboard/plugin.js',
-	'node_modules/@fortawesome/fontawesome-free/js/all.min.js',
-	'node_modules/reveal.js-mermaid-plugin/plugin/mermaid/mermaid.js'
-]
-
-const extraStylesheets = [
-	{ href: 'node_modules/reveal.js/dist/reveal.css' },
-	{ href: 'node_modules/reveal.js/dist/plugin/highlight/zenburn.css' },
-	{ href: 'node_modules/asciinema-player/dist/bundle/asciinema-player.css' },
-	{ href: 'node_modules/reveal.js-plugins/customcontrols/style.css' },
-	{ href: 'node_modules/reveal.js-plugins/chalkboard/style.css' },
-	{ href: 'node_modules/@fortawesome/fontawesome-free/css/all.min.css' },
-]
-
-const extraThemeCssStylesheets = [
-	{ href: 'css/dhbw.css', id: 'theme' }
-
-]
-
-const defaultDennisPlugins = [
-	ShowCodeSnippets, ShowToc, ShowAttribution, ShowQrCode, ShowTitle,
-	ModifyFontSize, ShowHTMLExample, ToggleSolutionsPlugin, DirTreePlugin,
-	PrefixUrlPlugin, AsciinemaPlugin
-]
 
 const defaultRevealOptions = {
 	embedded: false,
@@ -65,7 +88,7 @@ const defaultRevealOptions = {
 	// Display a presentation progress bar
 	progress: true,
 	// Display the page number of the current slide
-	slideNumber: true,
+	slideNumber: "c/t",
 	// Push each slide change to the browser history
 	history: true,
 	// none/fade/slide/convex/concave/zoom
@@ -96,6 +119,13 @@ const defaultRevealOptions = {
 			{ color: 'rgba(225, 2, 23, 0.6)' },
 			{ color: 'rgba(100,100,100,0.6)' },
 		]
+	},
+	simplemenu: {
+		flat: true,
+		barhtml: {
+			header: "",
+			footer: "<div class='menubar bottom'><ul class='menu'></ul></div>"
+		}
 	},
 	keyboard: {
 		33: function () { Reveal.left(); }, // Don't go up using the presenter
@@ -147,80 +177,85 @@ const defaultRevealOptions = {
 	plugins: []
 }
 
-async function loadExternalEsmLibs() {
-	const modules = await Promise.all(
-		externalEsmLibs.map(lib => import('node_modules/' + lib.src))
-	);
-	return modules.map(m => m.default);
+// Resolve a bare-package path against the configured basePath, and
+// absolutize against document.baseURI so the result works identically
+// for DOM tag URLs (resolved vs document) and dynamic import()
+// (resolved vs the importing module URL).
+function toUrl(basePath, pkgPath) {
+	return new URL(`${basePath}node_modules/${pkgPath}`, document.baseURI).href
 }
 
-async function addPrintStylesheetIfUrlContainsPrintPdf() {
-	// If the query includes 'print-pdf', include the PDF print sheet
-	if (window.location.search.match(/print-pdf/gi)) {
-		console.log("Print version requested");
+async function addPrintStylesheetIfUrlContainsPrintPdf(options) {
+	if (!window.location.search.match(/print-pdf/gi)) return
 
-		const link = document.createElement('link');
-		link.rel = 'stylesheet';
-		link.type = 'text/css';
-		link.href = 'node_modules/@farberg/reveal-template/css/dhbw-print.css';
-		document.getElementsByTagName('head')[0].appendChild(link);
-	}
+	console.log("Print version requested")
+	const link = document.createElement('link')
+	link.rel = 'stylesheet'
+	link.type = 'text/css'
+	link.href = printStylesheet
+	document.head.appendChild(link)
 }
 
 // Resolve when window has finished loading
 function windowOnLoadPromise() {
-	return new Promise((resolve, reject) => {
-		window.addEventListener('load', () => resolve())
-	})
+	return new Promise(resolve => window.addEventListener('load', () => resolve()))
 }
 
-// Load reveal and its plugins
+// Load reveal core + bundled plugins
 function loadRevealAndPlugins(options) {
-	const imports = [
-		"dist/reveal.mjs" /*must be the first one*/,
-		"dist/plugin/markdown.mjs",
-		"dist/plugin/highlight.mjs",
-		"dist/plugin/search.mjs",
-		"dist/plugin/notes.mjs",
-		"dist/plugin/math.mjs",
-		"dist/plugin/zoom.mjs"
-	]
-
 	if (options.verbose)
-		console.log("Importing the following plugins: ", imports)
+		console.log("Importing reveal modules: ", revealEsmModules)
 
-	return Promise.all(imports.map(i => import(options.revealPath + i)))
+	return Promise.all(revealEsmModules.map(p => import(toUrl(options.basePath, p))))
 }
 
-// Add js tags to the header and resolve
-async function addJsDependencies(options, externalJsLibs) {
-	for (let file of externalJsLibs) {
-		const script = document.createElement('script');
-		script.src = options.jsPrefixPath + file;
-		document.head.appendChild(script);
+// Dynamically import each third-party ESM dep. Returns an object keyed by the
+// same names as `esmDeps`, mapped to the imported module namespace.
+// Dynamically import each esmDep in parallel. Returns:
+//   { deps: { [name]: module }, plugins: [defaultExports of isPlugin entries] }
+async function loadEsmDeps(options) {
+	const loaded = await Promise.all(
+		Object.entries(esmDeps).map(async ([key, meta]) => {
+			const mod = await import(toUrl(options.basePath, meta.path))
+			return { key, mod, meta }
+		})
+	)
+	return {
+		deps: Object.fromEntries(loaded.map(({ key, mod }) => [key, mod])),
+		plugins: loaded.filter(({ meta }) => meta.isPlugin).map(({ mod }) => mod.default)
 	}
 }
 
-// Add CSSs tags to the header and resolve
-async function addCssDependencies(options, cssFiles, themeCssFiles) {
+// Inject classic <script> tags and await each one's load event so dependent
+// globals (window.RevealChalkboard, etc.) are defined before Reveal init.
+function addJsDependencies(options) {
+	return Promise.all(externalJsLibs.map(pkgPath => new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.src = toUrl(options.basePath, pkgPath)
+		script.onload = () => resolve()
+		script.onerror = () => reject(new Error(`Failed to load ${script.src}`))
+		document.head.appendChild(script)
+	})))
+}
+
+// Add <link rel="stylesheet"> tags for each CSS file
+function addCssDependencies(options) {
 	function addCssElement(href, id) {
-		const cssEl = document.createElement('link');
+		const cssEl = document.createElement('link')
 		cssEl.rel = "stylesheet"
 		cssEl.href = href
-		if (id)
-			cssEl.id = id
-
-		document.head.appendChild(cssEl);
+		if (id) cssEl.id = id
+		document.head.appendChild(cssEl)
 	}
 
-	for (let css of cssFiles) {
-		addCssElement(options.cssPrefixPath + css.href, css.id)
-	}
+	for (const css of extraStylesheets)
+		addCssElement(toUrl(options.basePath, css.href), css.id)
 
-	for (let css of themeCssFiles) {
-		addCssElement(options.cssThemePrefixPath + css.href, css.id)
-	}
-
+	// Theme CSS hrefs are used as-is. Defaults are absolute URLs (resolved via
+	// import.meta.url so they work in both local-dev and npm-install layouts).
+	// User overrides pass document-relative or absolute URLs directly.
+	for (const css of options.themeCss)
+		addCssElement(css.href, css.id)
 }
 
 function getDocumentToLoadOrRedirectToIndexDocument(options) {
@@ -248,6 +283,24 @@ function addMarkdownSectionToPresentation(doc, options) {
 	options.slidesDestinationElement.appendChild(mdel)
 }
 
+// Build the Dennis-plugins array, injecting ESM deps into the factories that
+// need them. Plugins that take no deps stay as static factory imports.
+function buildDennisPlugins(deps) {
+	return [
+		ShowCodeSnippets,
+		ShowToc,
+		ShowAttribution,
+		ShowQrCode(deps.qrCreator.default),
+		ShowTitle,
+		ModifyFontSize,
+		ShowHTMLExample,
+		ToggleSolutionsPlugin,
+		DirTreePlugin(deps.fflate),
+		PrefixUrlPlugin,
+		AsciinemaPlugin(deps.asciinemaPlayer.create)
+	]
+}
+
 export function initReveal(opts) {
 	// Generate options and include defaults (later sources' properties overwrite earlier ones)
 	const options = Object.assign({}, defaultOptions, opts)
@@ -255,21 +308,22 @@ export function initReveal(opts) {
 	// Load dependencies and then initialize Reveal
 	Promise.all([
 		loadRevealAndPlugins(options),
-		loadExternalEsmLibs(),
-		addJsDependencies(options, externalJsLibs),
-		addCssDependencies(options, extraStylesheets, extraThemeCssStylesheets),
-		addPrintStylesheetIfUrlContainsPrintPdf(),
+		loadEsmDeps(options),
+		addJsDependencies(options),
+		addCssDependencies(options),
+		addPrintStylesheetIfUrlContainsPrintPdf(options),
 		windowOnLoadPromise()
 	]).then(async values => {
-		//Get the first element from the array, this is the Reveal module
-		const modules = values[0].map(m => m.default)
-		const Reveal = modules.shift();
-		const externalEsmPlugins = values[1];
+		const [revealModules, { deps, plugins: esmPlugins }] = values
 
-		//Make it globally available
+		// First entry from reveal modules is Reveal itself
+		const modules = revealModules.map(m => m.default)
+		const Reveal = modules.shift()
+
+		// Make it globally available
 		window.Reveal = Reveal
 
-		//Add markdown doc to presentation
+		// Add markdown doc to presentation
 		const doc = getDocumentToLoadOrRedirectToIndexDocument(options)
 
 		if (doc) {
@@ -281,12 +335,11 @@ export function initReveal(opts) {
 			//Add plugins
 			finalOptions.plugins = [
 				...modules,
-				...defaultDennisPlugins,
-				...externalEsmPlugins,
+				...buildDennisPlugins(deps),
+				...esmPlugins,
 				...finalOptions.plugins,
-				RevealMermaid,
-				RevealChalkboard,
-				RevealCustomControls
+				window.RevealChalkboard,
+				window.RevealCustomControls
 			]
 
 			if (options.verbose)

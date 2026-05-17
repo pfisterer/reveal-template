@@ -14,7 +14,7 @@ code/k8s-demo-app/package.json
 </pre>
 */
 
-const dir_tree = {
+const dirTreeFactory = ({ zip, strToU8 }) => ({
 	id: 'dir_tree',
 	init: (deck) => {
 
@@ -244,6 +244,17 @@ const dir_tree = {
 			return tree;
 		}
 
+		function downloadBlob(blob, filename) {
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		}
+
 		function download(files, zipName) {
 			Promise.all(files.map(f => fetch(f, { credentials: 'include' })))
 				.then(responses => {
@@ -252,9 +263,12 @@ const dir_tree = {
 						return;
 					}
 					return Promise.all(responses.map(r => r.text())).then(values => {
-						const zip = new JSZip();
-						values.forEach((text, i) => zip.file(files[i], text));
-						zip.generateAsync({ type: 'blob' }).then(blob => saveAs(blob, zipName));
+						const entries = {};
+						values.forEach((text, i) => { entries[files[i]] = strToU8(text); });
+						zip(entries, (err, data) => {
+							if (err) { console.error('zip failed', err); return; }
+							downloadBlob(new Blob([data], { type: 'application/zip' }), zipName);
+						});
 					});
 				});
 		}
@@ -378,6 +392,6 @@ const dir_tree = {
 			}
 		});
 	}
-}
+})
 
-export default dir_tree;
+export default dirTreeFactory;

@@ -1,7 +1,14 @@
+<!-- .slide: data-state="hide-menubar" -->
 <div class="lecturetitle">Introduction</div>
 
 ---
-## Some Heading
+## Table of Contents
+<!-- .slide: data-state="hide-menubar" -->
+
+<ul class="menu"><ul>
+
+---
+## Mermaid Example
 
 ```mermaid
 graph LR
@@ -15,27 +22,32 @@ Some text
 - This is an example presentation
 - This is an example presentation
 
-Some text
-- This is an example presentation
-- This is an example presentation
-- This is an example presentation
-
 ---
-## Next Heading
+## Asciinema Example
 
-Some text
-- This is an example presentation
-- This is an example presentation
-- This is an example presentation
-
-Some text
-- This is an example presentation
-- This is an example presentation
-- This is an example presentation
+<asciinema data-conf='{ "cols": 120, "rows": 25, "theme":"monokai", "autoPlay": true, "idleTimeLimit": 2, "terminalFontSize": "16px"}'
+        src="k8s-deployment.cast" />
 
 
 ---
+## Some Heading
+<!-- .slide: data-name="Some Heading" -->
+
+Some text
+- This is an example presentation
+- This is an example presentation
+- This is an example presentation
+
+Some text
+- This is an example presentation
+- This is an example presentation
+- This is an example presentation
+
+<credits>This is a test for the credits section.</credits>
+
+---
 ## Next Heading
+<!-- .slide: data-name="next-heading" -->
 
 Some text
 - This is an example presentation

@@ -19,20 +19,19 @@
 */
 
 
-function showLinkToSlidesAndQrCode(deck, url) {
+function showLinkToSlidesAndQrCode(QrCreator, deck, url) {
 	if (url === undefined)
 		return
 
 	let qrElements = deck.getSlidesElement().getElementsByClassName('qrcodeforslides')
 	for (let qrel of qrElements) {
 
-		new QRCode(qrel, {
+		QrCreator.render({
 			text: url,
-			width: 500,
-			height: 500,
-		});
+			size: 500,
+		}, qrel);
 
-		console.log("QR Code for slides generated", qrel, url)
+		//console.log("QR Code for slides generated", qrel, url)
 	}
 
 	let urlElements = deck.getSlidesElement().getElementsByClassName('urlforslides')
@@ -43,7 +42,7 @@ function showLinkToSlidesAndQrCode(deck, url) {
 
 }
 
-export default () => {
+export default (QrCreator) => {
 	return {
 		id: 'show_qr_code',
 		init: (deck) => {
@@ -60,7 +59,7 @@ export default () => {
 							return res.json();
 						})
 						.then(json => {
-							if (json) showLinkToSlidesAndQrCode(deck, json.homepage)
+							if (json) showLinkToSlidesAndQrCode(QrCreator, deck, json.homepage)
 						})
 						.catch(err => console.log("Error fetching info json", err))
 				else

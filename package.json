@@ -1,6 +1,6 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "1.1.19",
+  "version": "1.1.21",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
   "main": "index.js",
@@ -18,16 +18,15 @@
     "@fortawesome/fontawesome-free": "^7.2.0",
     "asciinema-player": "^3.15.1",
     "connect": "^3.7.0",
-    "easyqrcodejs": "^4.6.2",
-    "file-saver": "^2.0.5",
-    "jszip": "^3.10.1",
+    "fflate": "^0.8.3",
     "mermaid": "^11.15.0",
     "pdf-merger-js": "^5.1.2",
     "puppeteer": "^25.0.2",
+    "qr-creator": "^1.0.0",
     "reveal.js": "^6.0.1",
     "reveal.js-mermaid-plugin": "^11.12.3",
     "reveal.js-plugins": "^4.6.0",
-    "serve-static": "^2.2.1",
-    "reveal.js-simplemenu": "^2.0.3"
+    "reveal.js-simplemenu": "^2.0.3",
+    "serve-static": "^2.2.1"
   }
 }

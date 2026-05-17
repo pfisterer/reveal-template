@@ -1,11 +1,9 @@
-function initSlide(slide) {
+function initSlide(asciinemaCreate, slide) {
 	let players = []
 
 	let asciinemaElements = slide.getElementsByTagName("asciinema")
 
 	for (let el of asciinemaElements) {
-		//console.log("Found asciinema element: ", el)
-
 		//Make element invisible
 		el.style.display = "none"
 
@@ -16,8 +14,7 @@ function initSlide(slide) {
 
 		div.setAttribute('data-farberg-asciinema', 'true')
 
-		//console.log("Playing", source, "with options", conf)
-		players.push(AsciinemaPlayer.create(source, div, JSON.parse(conf)))
+		players.push(asciinemaCreate(source, div, JSON.parse(conf)))
 
 		el.parentNode.insertBefore(div, el.nextSibling)
 	}
@@ -38,7 +35,7 @@ function destroyPlayer(slide, players) {
 	players.forEach(player => player.dispose())
 }
 
-export default () => {
+export default (asciinemaCreate) => {
 
 	return {
 		id: 'asciinema',
@@ -46,13 +43,13 @@ export default () => {
 			deck.on('ready', () => {
 				let currentPlayers = undefined
 
-				currentPlayers = initSlide(deck.getCurrentSlide())
+				currentPlayers = initSlide(asciinemaCreate, deck.getCurrentSlide())
 
 				deck.addEventListener('slidechanged', function (event) {
 					if (event.previousSlide)
 						destroyPlayer(event.previousSlide, currentPlayers)
 
-					currentPlayers = initSlide(event.currentSlide)
+					currentPlayers = initSlide(asciinemaCreate, event.currentSlide)
 				})
 			})
 		}
