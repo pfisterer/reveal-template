@@ -11,6 +11,11 @@ import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
 
+
+const externalEsmLibs = [
+	{ src: 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js', global: 'Simplemenu' }
+]
+
 const defaultOptions = {
 	revealOptions: {},
 	revealPath: "../../reveal.js/",
@@ -119,12 +124,34 @@ const defaultRevealOptions = {
 			secondaryColor: '#5c6971',
 			secondaryTextColor: '#000'
 		},
-		sequence: { mirrorActors: false, useMaxWidth: true },
-		flowchart: { useMaxWidth: true, padding: 6 }
+		sequence: {
+			mirrorActors: false,
+			useMaxWidth: true,
+			boxMargin: 15,
+			actorMargin: 60,
+			messageMargin: 45,
+			noteMargin: 15
+		},
+		flowchart: {
+			useMaxWidth: true,
+			htmlLabels: true,
+			curve: 'basis',
+			padding: 20,
+			nodeSpacing: 70,
+			rankSpacing: 90,
+			subGraphTitleMargin: { top: 8, bottom: 8 }
+		}
 	},
 
 	// Leave here
 	plugins: []
+}
+
+async function loadExternalEsmLibs() {
+	const modules = await Promise.all(
+		externalEsmLibs.map(lib => import('node_modules/' + lib.src))
+	);
+	return modules.map(m => m.default);
 }
 
 async function addPrintStylesheetIfUrlContainsPrintPdf() {
@@ -228,6 +255,7 @@ export function initReveal(opts) {
 	// Load dependencies and then initialize Reveal
 	Promise.all([
 		loadRevealAndPlugins(options),
+		loadExternalEsmLibs(),
 		addJsDependencies(options, externalJsLibs),
 		addCssDependencies(options, extraStylesheets, extraThemeCssStylesheets),
 		addPrintStylesheetIfUrlContainsPrintPdf(),
@@ -236,6 +264,7 @@ export function initReveal(opts) {
 		//Get the first element from the array, this is the Reveal module
 		const modules = values[0].map(m => m.default)
 		const Reveal = modules.shift();
+		const externalEsmPlugins = values[1];
 
 		//Make it globally available
 		window.Reveal = Reveal
@@ -253,6 +282,7 @@ export function initReveal(opts) {
 			finalOptions.plugins = [
 				...modules,
 				...defaultDennisPlugins,
+				...externalEsmPlugins,
 				...finalOptions.plugins,
 				RevealMermaid,
 				RevealChalkboard,

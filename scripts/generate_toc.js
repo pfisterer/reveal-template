@@ -17,6 +17,7 @@ let md_files = fs.readdirSync(".")
 	.filter(file => path.extname(file).toLowerCase() === ".md")
 	.filter(file => !path.basename(file, ".md").startsWith("__"))
 	.filter(file => path.basename(file, ".md") !== "README")
+	.filter(file => path.basename(file, ".md") !== "CLAUDE")
 
 let generateTable = md_files.map(file => file.match(structuredNameRegexp)).reduce((a, b) => a && b, true)
 

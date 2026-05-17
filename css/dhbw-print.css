@@ -12,5 +12,10 @@ credits {
 }
 
 .reveal .slides {
-	pointer-events: initial !important;	
+	pointer-events: initial !important;
+}
+
+/* In print, drop the Simplemenu bar entirely. */
+.menubar {
+  display: none !important;
 }

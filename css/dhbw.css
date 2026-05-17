@@ -509,61 +509,154 @@ tr>tr:first-of-type {
   border-top: 1px solid black !important;
 }
 
+/* ---------------------------------------------------------------------- */
+/* Bottom strip: Simplemenu menubar (left), attribution (right of it),    */
+/* slide number (far right) — share one thin lane, same grey baseline.    */
+/* ---------------------------------------------------------------------- */
+
+:root {
+  --dhbw-strip-color: #4e565c;
+  --dhbw-strip-font-size: 12px;
+  --dhbw-strip-height: 20px;
+  --dhbw-strip-bottom: 6px;
+}
+
 .reveal .slide-number {
-  color: #4e565c;
+  color: var(--dhbw-strip-color) !important;
+  background: none !important;
+  font-family: inherit !important;
+  font-size: var(--dhbw-strip-font-size) !important;
+  right: 8px !important;
+  bottom: var(--dhbw-strip-bottom) !important;
+  height: var(--dhbw-strip-height) !important;
+  line-height: var(--dhbw-strip-height) !important;
+  padding: 0 !important;
   z-index: 100;
 }
 
-.attribution {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0px !important;
-  font-size: 12px !important;
-}
-
-.has-dark-background>.attribution {
-  color: #4e565c;
-}
-
-.has-dark-background>.attribution>a {
-  color: #4e565c !important;
+.reveal .slide-number a {
+  color: var(--dhbw-strip-color) !important;
+  opacity: 1 !important;
+  /* override Simplemenu's 0.33 dimming */
+  padding: 0 !important;
+  line-height: var(--dhbw-strip-height) !important;
 }
 
 credits {
   visibility: hidden;
 }
 
-/* Credits Dennis */
-
 attribution {
-  position: absolute !important;
-  /* display: block; */
-  display: table-cell !important;
-  vertical-align: middle !important;
-  right: 35px;
-  bottom: 8px;
-  height: 22px;
+  position: fixed !important;
+  display: block !important;
+  left: auto;
+  right: 70px;
+  /* leaves room for the slide-number on its right */
+  bottom: var(--dhbw-strip-bottom) !important;
+  height: var(--dhbw-strip-height) !important;
+  line-height: var(--dhbw-strip-height) !important;
   z-index: 200;
-  font-size: 12px;
+  font-size: var(--dhbw-strip-font-size) !important;
   text-align: right;
-  color: #4e565c;
-  background-color: rgba(0, 0, 0, 0.4);
+  color: var(--dhbw-strip-color) !important;
+  background-color: transparent !important;
+  padding: 0 !important;
 }
 
 attribution>span {
-  padding-left: 5px !important;
-  padding-right: 5px !important;
-  line-height: 22px !important;
+  padding: 0 !important;
+  line-height: var(--dhbw-strip-height) !important;
 }
 
-attribution a {
-  font-size: 12px;
-  color: #4e565c;
-}
-
+attribution a,
 attribution a:visited {
-  font-size: 12px;
-  color: #4e565c;
+  font-size: var(--dhbw-strip-font-size);
+  color: var(--dhbw-strip-color);
+  line-height: var(--dhbw-strip-height);
+}
+
+.has-dark-background>.attribution,
+.has-dark-background>.attribution>a {
+  color: var(--dhbw-strip-color) !important;
+}
+
+/* Simplemenu's CSS is injected at plugin load (after dhbw.css), so we
+   need !important here to win specificity on layout props. */
+.menubar {
+  color: var(--dhbw-strip-color) !important;
+  background: transparent !important;
+  font-size: var(--dhbw-strip-font-size) !important;
+  height: var(--dhbw-strip-height) !important;
+  line-height: var(--dhbw-strip-height) !important;
+  bottom: var(--dhbw-strip-bottom) !important;
+  padding: 0 8px 0 15px !important;
+  /* left gutter for the menu */
+  justify-content: flex-start !important;
+  align-items: center !important;
+}
+
+.menubar:before,
+.menubar:after {
+  display: none !important;
+}
+
+.menubar>ul {
+  gap: 1.5em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  height: var(--dhbw-strip-height) !important;
+  line-height: var(--dhbw-strip-height) !important;
+}
+
+.menubar>ul li {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  height: var(--dhbw-strip-height) !important;
+  line-height: var(--dhbw-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Every menu link state — active, inactive, hover, visited — uses the same
+   color, size, weight, padding and rendering, so nothing can shift the
+   baseline between states. Hover is the only visual change. */
+.menubar a,
+.menubar a:visited,
+.menubar a:active,
+.menubar>ul a,
+.menubar>ul li a.active,
+.menubar>ul li.active a {
+  display: inline-block !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  text-decoration: none !important;
+  font-size: var(--dhbw-strip-font-size) !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  color: var(--dhbw-strip-color) !important;
+  opacity: 1 !important;
+  height: var(--dhbw-strip-height) !important;
+  line-height: var(--dhbw-strip-height) !important;
+  vertical-align: baseline !important;
+  transform: none !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.menubar>ul a:hover {
+  color: #1a1a1a !important;
+}
+
+/* Active item: fake-bold via text-stroke so the glyph width stays identical
+   to the inactive state (font-weight changes would shift neighbour items). */
+.menubar>ul li.active>a,
+.menubar>ul li>a.active {
+  color: #1a1a1a !important;
+  -webkit-text-stroke: 0.4px currentColor !important;
 }
 
 .source-code-link {
