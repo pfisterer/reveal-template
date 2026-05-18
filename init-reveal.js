@@ -10,6 +10,7 @@ import ToggleSolutionsPlugin from './plugins/reveal-plugin-toggle-solutions.js';
 import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
+import QuickNavPlugin from './plugins/reveal-plugin-quick-nav.js';
 
 // All third-party paths below are written as bare-package specifiers
 // (e.g. "reveal.js/dist/reveal.mjs"). At runtime they are resolved to
@@ -297,7 +298,8 @@ function buildDennisPlugins(deps) {
 		ToggleSolutionsPlugin,
 		DirTreePlugin(deps.fflate),
 		PrefixUrlPlugin,
-		AsciinemaPlugin(deps.asciinemaPlayer.create)
+		AsciinemaPlugin(deps.asciinemaPlayer.create),
+		QuickNavPlugin
 	]
 }
 
