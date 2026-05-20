@@ -173,7 +173,7 @@ function buildOverlay(deck) {
 		<div class="quick-nav-panel" role="dialog" aria-label="Quick slide navigation">
 			<div class="quick-nav-header">
 				<span class="quick-nav-title">Quick Nav</span>
-				<input type="text" class="quick-nav-search" placeholder="Filter headings…" autocomplete="off" spellcheck="false" />
+				<input type="text" class="quick-nav-search" placeholder="Full-text search…" autocomplete="off" spellcheck="false" />
 				<span class="quick-nav-count"></span>
 				<button class="quick-nav-close" title="Close (Esc / q)">×</button>
 			</div>

@@ -153,7 +153,9 @@ const defaultRevealOptions = {
 			lineColor: '#5c6971',
 			primaryBorderColor: '#5c6971',
 			secondaryColor: '#5c6971',
-			secondaryTextColor: '#000'
+			secondaryTextColor: '#000',
+			tertiaryColor: '#e8e8e8',
+			loopTextColor: '#4a4a4a'
 		},
 		sequence: {
 			mirrorActors: false,
