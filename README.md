@@ -67,5 +67,5 @@ To start developing on this repository:
 # Bump version in `package.json`
 
 # Run this command to publish on npm
-npm publish --access public
+npm login && sleep 3s && npm publish --access public
 ```

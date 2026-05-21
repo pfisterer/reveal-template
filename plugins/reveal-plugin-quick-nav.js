@@ -143,6 +143,14 @@ function injectStyles() {
 			background: #e2001a;
 			color: #fff;
 		}
+		#quick-nav-overlay .quick-nav-item.current-slide {
+			border-left: 3px solid #e2001a;
+			padding-left: 3px;
+			font-weight: bold;
+		}
+		#quick-nav-overlay .quick-nav-item.active.current-slide {
+			border-left-color: #fff;
+		}
 		#quick-nav-overlay .quick-nav-h1 {
 			font-weight: bold;
 			font-size: 13px;
@@ -191,6 +199,7 @@ function buildOverlay(deck) {
 	let allItems = []
 	let filtered = []
 	let activeIndex = -1
+	let currentIndices = { h: 0, v: 0 }
 
 	function render() {
 		list.innerHTML = ''
@@ -204,6 +213,7 @@ function buildOverlay(deck) {
 				const a = document.createElement('a')
 				a.className = `quick-nav-item quick-nav-${item.level}`
 				if (idx === activeIndex) a.classList.add('active')
+				if (item.h === currentIndices.h && item.v === currentIndices.v) a.classList.add('current-slide')
 				a.textContent = item.text
 				a.href = '#'
 				a.addEventListener('click', e => {
@@ -236,8 +246,11 @@ function buildOverlay(deck) {
 		allItems = collectHeadings(deck)
 		filtered = allItems
 		input.value = ''
-		activeIndex = filtered.length > 0 ? 0 : -1
+		currentIndices = deck.getIndices()
+		const currentIdx = filtered.findIndex(i => i.h === currentIndices.h && i.v === currentIndices.v)
+		activeIndex = currentIdx >= 0 ? currentIdx : (filtered.length > 0 ? 0 : -1)
 		render()
+		scrollActiveIntoView()
 		overlay.classList.add('visible')
 		setTimeout(() => input.focus(), 30)
 	}
