@@ -3,7 +3,8 @@ Shows a code snippet after loading it from a file.
 
 Parameters:
 - data-code: Language
-- data-begin: Begin indicator in the file (optional)
+- data-begin: Begin indicator in the file (optional; substring match, first occurrence)
+- data-begin-nth: Start after the Nth occurrence of data-begin instead of the first (optional, 1-based)
 - data-end: End indicator in the file (optional)
 - data-link: Show a link to the file (optional)
 
@@ -45,17 +46,25 @@ function showCode(el, language, code, link, outdent) {
 	return newEl
 }
 
-function extractBeginEndSnippet(code, beginMarker, endMarker) {
+function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth) {
 	let lines = code.split('\n');
 	let out = "";
-	let beginFound = beginMarker ? false : true
 	beginMarker = beginMarker ? beginMarker.trim() : null
+	// Trim and null-guard endMarker: otherwise indexOf(null) below coerces to
+	// indexOf("null"), so a line containing "null" would end the snippet early.
+	endMarker = endMarker ? endMarker.trim() : null
+	// Markers are substring-matched. By default the snippet starts after the
+	// first line containing beginMarker; data-begin-nth selects a later one.
+	let nth = beginNth && beginNth > 0 ? beginNth : 1
+	let seen = 0
+	let beginFound = beginMarker ? false : true
 
 	for (let line of lines) {
 		if (!beginFound && line.indexOf(beginMarker) >= 0) {
-			beginFound = true;
+			if (++seen >= nth)
+				beginFound = true;
 			continue;
-		} else if (beginFound && line.indexOf(endMarker) >= 0) {
+		} else if (beginFound && endMarker && line.indexOf(endMarker) >= 0) {
 			break;
 		} else if (!beginFound) {
 			continue;
@@ -179,6 +188,7 @@ export default () => {
 					let language = el.getAttribute("data-code");
 					let url = el.getAttribute("href");
 					let beginMarker = el.getAttribute("data-begin")
+					let beginNth = parseInt(el.getAttribute("data-begin-nth"), 10) || 1
 					let endMarker = el.getAttribute("data-end")
 					let showLink = el.hasAttribute("data-link")
 					let outdentCode = el.hasAttribute("data-outdent")
@@ -203,7 +213,7 @@ export default () => {
 							continue
 						}
 						const text = await response.text()
-						let code = extractBeginEndSnippet(text, beginMarker, endMarker)
+						let code = extractBeginEndSnippet(text, beginMarker, endMarker, beginNth)
 
 						if (!code) {
 							showError(el, `No content extracted from ${url} (begin=${beginMarker}, end=${endMarker})`)
