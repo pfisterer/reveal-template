@@ -119,6 +119,231 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					background: #dafbe1;
 				}
 
+				/* Preview button — same hover behaviour as the copy button */
+				.dirtree-preview-btn {
+					display: inline-flex;
+					align-items: center;
+					margin-left: 6px;
+					padding: 0px 6px;
+					background: transparent;
+					border: 1px solid #d0d7de;
+					border-radius: 4px;
+					color: #57606a;
+					font-size: 0.78em;
+					cursor: pointer;
+					opacity: 0 !important;
+					pointer-events: none !important;
+					transition: opacity 0.15s, background 0.15s, color 0.15s;
+					user-select: none;
+					line-height: 1.6;
+					font-family: inherit;
+				}
+
+				li.dirtree:hover > .dirtree-preview-btn {
+					opacity: 1 !important;
+					pointer-events: auto !important;
+				}
+
+				.dirtree-preview-btn:hover {
+					background: #f6f8fa;
+					border-color: #8c959f;
+					color: #1f2328;
+				}
+
+				/* Preview modal */
+				.dirtree-modal-overlay {
+					position: fixed;
+					inset: 0;
+					background: rgba(27, 31, 36, 0.55);
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					z-index: 10000;
+					padding: 4vh 4vw;
+				}
+
+				.dirtree-modal {
+					background: #ffffff;
+					border: 1px solid #d0d7de;
+					border-radius: 10px;
+					box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+					display: flex;
+					flex-direction: column;
+					max-width: 1100px;
+					width: 100%;
+					max-height: 92vh;
+					overflow: hidden;
+					text-align: left;
+				}
+
+				.dirtree-modal-header {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 12px;
+					padding: 10px 14px;
+					border-bottom: 1px solid #d0d7de;
+					background: #f6f8fa;
+					font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+				}
+
+				.dirtree-modal-title {
+					color: #1f2328;
+					font-size: 0.95rem;
+					font-weight: 600;
+					word-break: break-all;
+				}
+
+				.dirtree-modal-actions {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					flex-shrink: 0;
+				}
+
+				.dirtree-modal-btn {
+					padding: 2px 10px;
+					background: transparent;
+					border: 1px solid #d0d7de;
+					border-radius: 6px;
+					color: #57606a;
+					font-size: 0.85rem;
+					cursor: pointer;
+					font-family: inherit;
+					transition: background 0.15s, border-color 0.15s, color 0.15s;
+				}
+
+				.dirtree-modal-btn:hover {
+					background: #ffffff;
+					border-color: #8c959f;
+					color: #1f2328;
+				}
+
+				.dirtree-modal-btn.copied {
+					color: #116329;
+					border-color: #116329;
+					background: #dafbe1;
+				}
+
+				.dirtree-modal-body {
+					margin: 0;
+					padding: 0;
+					overflow: auto;
+					background: #ffffff;
+				}
+
+				.dirtree-modal-body pre {
+					margin: 0;
+					box-shadow: none;
+					background: transparent;
+				}
+
+				.dirtree-modal-body code {
+					font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+					/* Default size; the A−/A+ buttons override this via inline style. */
+					font-size: 16px;
+					line-height: 1.55;
+					color: #24292e;
+					white-space: pre;
+					tab-size: 4;
+					padding: 14px 16px;
+					display: block;
+				}
+
+				/* ── Light syntax theme (GitHub), scoped to the preview modal ──
+				   The slides use the global dark zenburn theme; these rules win by
+				   specificity (.dirtree-modal-body .hljs-* beats .hljs-*) so only
+				   the modal renders light. */
+				.dirtree-modal-body code.hljs {
+					background: transparent;
+					color: #24292e;
+				}
+				.dirtree-modal-body .hljs-comment,
+				.dirtree-modal-body .hljs-quote {
+					color: #6a737d;
+				}
+				.dirtree-modal-body .hljs-keyword,
+				.dirtree-modal-body .hljs-selector-tag,
+				.dirtree-modal-body .hljs-doctag {
+					color: #d73a49;
+				}
+				.dirtree-modal-body .hljs-string,
+				.dirtree-modal-body .hljs-meta .hljs-string,
+				.dirtree-modal-body .hljs-regexp {
+					color: #032f62;
+				}
+				.dirtree-modal-body .hljs-number,
+				.dirtree-modal-body .hljs-literal,
+				.dirtree-modal-body .hljs-attr,
+				.dirtree-modal-body .hljs-attribute,
+				.dirtree-modal-body .hljs-variable,
+				.dirtree-modal-body .hljs-template-variable {
+					color: #005cc5;
+				}
+				.dirtree-modal-body .hljs-title,
+				.dirtree-modal-body .hljs-section,
+				.dirtree-modal-body .hljs-name,
+				.dirtree-modal-body .hljs-selector-id,
+				.dirtree-modal-body .hljs-selector-class {
+					color: #6f42c1;
+				}
+				.dirtree-modal-body .hljs-built_in,
+				.dirtree-modal-body .hljs-type,
+				.dirtree-modal-body .hljs-symbol,
+				.dirtree-modal-body .hljs-bullet,
+				.dirtree-modal-body .hljs-link {
+					color: #e36209;
+				}
+				.dirtree-modal-body .hljs-meta {
+					color: #6a737d;
+				}
+				.dirtree-modal-body .hljs-emphasis { font-style: italic; }
+				.dirtree-modal-body .hljs-strong   { font-weight: bold; }
+
+				/* ── Dark syntax theme (GitHub Dark), scoped + .dark modifier ──
+				   Higher specificity than the light rules above so toggling the
+				   .dark class on the body switches the whole modal. */
+				.dirtree-modal-body.dark { background: #0d1117; }
+				.dirtree-modal-body.dark code { color: #c9d1d9; }
+				.dirtree-modal-body.dark code.hljs { background: transparent; color: #c9d1d9; }
+				.dirtree-modal-body.dark .hljs-comment,
+				.dirtree-modal-body.dark .hljs-quote,
+				.dirtree-modal-body.dark .hljs-meta {
+					color: #8b949e;
+				}
+				.dirtree-modal-body.dark .hljs-keyword,
+				.dirtree-modal-body.dark .hljs-selector-tag,
+				.dirtree-modal-body.dark .hljs-doctag {
+					color: #ff7b72;
+				}
+				.dirtree-modal-body.dark .hljs-string,
+				.dirtree-modal-body.dark .hljs-meta .hljs-string,
+				.dirtree-modal-body.dark .hljs-regexp {
+					color: #a5d6ff;
+				}
+				.dirtree-modal-body.dark .hljs-number,
+				.dirtree-modal-body.dark .hljs-literal,
+				.dirtree-modal-body.dark .hljs-attr,
+				.dirtree-modal-body.dark .hljs-attribute,
+				.dirtree-modal-body.dark .hljs-variable,
+				.dirtree-modal-body.dark .hljs-template-variable {
+					color: #79c0ff;
+				}
+				.dirtree-modal-body.dark .hljs-title,
+				.dirtree-modal-body.dark .hljs-section,
+				.dirtree-modal-body.dark .hljs-name,
+				.dirtree-modal-body.dark .hljs-selector-id,
+				.dirtree-modal-body.dark .hljs-selector-class {
+					color: #d2a8ff;
+				}
+				.dirtree-modal-body.dark .hljs-built_in,
+				.dirtree-modal-body.dark .hljs-type,
+				.dirtree-modal-body.dark .hljs-symbol,
+				.dirtree-modal-body.dark .hljs-bullet,
+				.dirtree-modal-body.dark .hljs-link {
+					color: #ffa657;
+				}
+
 				/* Download button */
 				.dirtree-download-btn {
 					position: absolute !important;
@@ -220,6 +445,194 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 						btn.textContent = '✗ error';
 						setTimeout(() => { btn.textContent = 'copy'; }, 1500);
 					});
+			});
+			return btn;
+		}
+
+		// Reveal's highlight plugin owns the hljs instance (window.hljs is not set).
+		// Returns it if the plugin is loaded, else null.
+		function getHljs() {
+			const plugin = deck.getPlugin('highlight');
+			return (plugin && plugin.hljs) || null;
+		}
+
+		// Maps file extensions to highlight.js language classes so the modal can
+		// syntax-highlight the preview when reveal's highlight plugin is loaded.
+		// Unknown extensions fall back to plain text.
+		function hljsLanguage(ext) {
+			const map = {
+				js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
+				json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'ini', xml: 'xml', html: 'xml',
+				css: 'css', scss: 'scss', md: 'markdown',
+				sh: 'bash', bash: 'bash', zsh: 'bash',
+				py: 'python', rb: 'ruby', go: 'go', rs: 'rust', java: 'java', sql: 'sql',
+				dockerfile: 'dockerfile',
+			};
+			return map[ext] || null;
+		}
+
+		// Single, lazily-created modal reused for every preview. Closing hides it
+		// (display:none) rather than removing it from the DOM.
+		let modalRefs = null;
+
+		// View preferences persist across previews within a session.
+		const FONT_MIN = 11, FONT_MAX = 32, FONT_STEP = 2;
+		let previewFontPx = 16;
+		let previewTheme = 'light';   // 'light' | 'dark'
+
+		function ensureModal() {
+			if (modalRefs) return modalRefs;
+
+			const overlay = document.createElement('div');
+			overlay.classList.add('dirtree-modal-overlay');
+			overlay.style.display = 'none';
+
+			const modal = document.createElement('div');
+			modal.classList.add('dirtree-modal');
+
+			const header = document.createElement('div');
+			header.classList.add('dirtree-modal-header');
+
+			const title = document.createElement('span');
+			title.classList.add('dirtree-modal-title');
+
+			const actions = document.createElement('div');
+			actions.classList.add('dirtree-modal-actions');
+
+			const body = document.createElement('div');
+			body.classList.add('dirtree-modal-body');
+			const pre = document.createElement('pre');
+			const code = document.createElement('code');
+			pre.appendChild(code);
+			body.appendChild(pre);
+
+			// Applies the current font-size and theme preferences to the modal.
+			function applyView() {
+				code.style.fontSize = previewFontPx + 'px';
+				body.classList.toggle('dark', previewTheme === 'dark');
+				themeBtn.textContent = previewTheme === 'dark' ? '☀ light' : '🌙 dark';
+			}
+
+			const fontDecBtn = document.createElement('button');
+			fontDecBtn.classList.add('dirtree-modal-btn');
+			fontDecBtn.title = 'Decrease font size';
+			fontDecBtn.textContent = 'A−';
+			fontDecBtn.addEventListener('click', () => {
+				previewFontPx = Math.max(FONT_MIN, previewFontPx - FONT_STEP);
+				applyView();
+			});
+
+			const fontIncBtn = document.createElement('button');
+			fontIncBtn.classList.add('dirtree-modal-btn');
+			fontIncBtn.title = 'Increase font size';
+			fontIncBtn.textContent = 'A+';
+			fontIncBtn.addEventListener('click', () => {
+				previewFontPx = Math.min(FONT_MAX, previewFontPx + FONT_STEP);
+				applyView();
+			});
+
+			const themeBtn = document.createElement('button');
+			themeBtn.classList.add('dirtree-modal-btn');
+			themeBtn.title = 'Toggle light / dark theme';
+			themeBtn.addEventListener('click', () => {
+				previewTheme = previewTheme === 'dark' ? 'light' : 'dark';
+				applyView();
+			});
+
+			const copyBtn = document.createElement('button');
+			copyBtn.classList.add('dirtree-modal-btn');
+			copyBtn.textContent = 'copy';
+
+			const closeBtn = document.createElement('button');
+			closeBtn.classList.add('dirtree-modal-btn');
+			closeBtn.textContent = '✕ close';
+
+			actions.appendChild(fontDecBtn);
+			actions.appendChild(fontIncBtn);
+			actions.appendChild(themeBtn);
+			actions.appendChild(copyBtn);
+			actions.appendChild(closeBtn);
+			header.appendChild(title);
+			header.appendChild(actions);
+
+			modal.appendChild(header);
+			modal.appendChild(body);
+			overlay.appendChild(modal);
+			document.body.appendChild(overlay);
+
+			function close() {
+				overlay.style.display = 'none';
+				// Re-enable reveal's keyboard navigation that we paused while open.
+				deck.configure({ keyboard: true });
+			}
+
+			// Close on backdrop click, but not when clicking inside the modal.
+			overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+			closeBtn.addEventListener('click', close);
+			document.addEventListener('keydown', e => {
+				if (overlay.style.display !== 'none' && e.key === 'Escape') {
+					e.stopPropagation();
+					close();
+				}
+			}, true);
+
+			copyBtn.addEventListener('click', () => {
+				writeToClipboard(code.textContent).then(() => {
+					copyBtn.textContent = '✓ copied';
+					copyBtn.classList.add('copied');
+					setTimeout(() => {
+						copyBtn.textContent = 'copy';
+						copyBtn.classList.remove('copied');
+					}, 1500);
+				});
+			});
+
+			applyView();   // initialise font-size, theme class and toggle label
+
+			modalRefs = { overlay, title, code, body, close, applyView };
+			return modalRefs;
+		}
+
+		function openPreview(filePath, fileName, ext) {
+			const { overlay, title, code, body, applyView } = ensureModal();
+			title.textContent = fileName;
+			code.textContent = 'Loading…';
+			// Reset highlight state so the reused element can be re-highlighted.
+			code.removeAttribute('class');
+			code.removeAttribute('data-highlighted');
+			applyView();   // re-apply font-size/theme (class reset above clears nothing inline, but keeps them in sync)
+			body.scrollTop = 0;
+
+			// Pause reveal navigation so arrow keys scroll the code, not the slides.
+			deck.configure({ keyboard: false });
+			overlay.style.display = 'flex';
+
+			fetch(filePath, { credentials: 'include' })
+				.then(r => {
+					if (!r.ok) throw new Error(`HTTP ${r.status}`);
+					return r.text();
+				})
+				.then(text => {
+					code.textContent = text;
+					const hljs = getHljs();
+					const lang = hljsLanguage(fileName.toLowerCase() === 'dockerfile' ? 'dockerfile' : ext);
+					if (hljs) {
+						// Hint the language when known; otherwise let hljs auto-detect.
+						if (lang) code.classList.add('language-' + lang);
+						try { hljs.highlightElement(code); } catch (e) { /* leave as plain text */ }
+					}
+				})
+				.catch(err => { code.textContent = 'Failed to load file: ' + err.message; });
+		}
+
+		function makePreviewButton(filePath, fileName, ext) {
+			const btn = document.createElement('button');
+			btn.classList.add('dirtree-preview-btn');
+			btn.title = 'Preview file contents';
+			btn.textContent = 'view';
+			btn.addEventListener('click', e => {
+				e.preventDefault();
+				openPreview(filePath, fileName, ext);
 			});
 			return btn;
 		}
@@ -346,6 +759,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 						li.appendChild(icon);
 						li.appendChild(a);
+						li.appendChild(makePreviewButton(finalPath, o, ext));
 						li.appendChild(makeCopyButton(finalPath));
 						el.appendChild(li);
 					}

@@ -8,6 +8,14 @@
 <ul class="menu"><ul>
 
 ---
+## Code Example
+
+```bash
+# Create a Kafka cluster using the operator
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/refs/heads/main/examples/kafka/kafka-ephemeral.yaml
+```
+
+---
 ## Mermaid Example
 
 ```mermaid

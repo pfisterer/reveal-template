@@ -10,9 +10,9 @@ Parameters:
 
 Example
 
-<a 	data-code='bash' 
-	data-begin="# Begin indicator in the file" 
-	data-end="# End indicator in the file" 
+<a 	data-code='bash'
+	data-begin="# Begin indicator in the file"
+	data-end="# End indicator in the file"
 	data-link
 	href="link/to/the/file.sh">Source code</a>
 */
@@ -26,6 +26,9 @@ function showError(el, err) {
 function showCode(el, language, code, link, outdent) {
 	var newEl = document.createElement('pre');
 	newEl.setAttribute('class', `language-${language}`);
+	// Keep the exact, un-escaped source so the copy button can reproduce it
+	// verbatim regardless of how we later restructure the DOM for display.
+	newEl.__rawCode = code
 	//Replace special chars
 	code = code.replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/"/g, "&quot;")
 
@@ -82,6 +85,43 @@ function injectStyles() {
 		pre.with-copy-btn {
 			position: relative;
 		}
+		/* Soft-wrap long lines like VS Code's word wrap. white-space:pre-wrap is
+		   a purely visual wrap: it does NOT insert real newlines into the text.
+		   overflow-wrap:anywhere lets very long tokens / URLs break instead of
+		   overflowing the slide. Copy fidelity is handled separately (see
+		   addCopyButton / wrapCodeLines), so wrapping never leaks into copied text. */
+		.reveal pre.with-copy-btn,
+		.reveal pre.with-copy-btn code {
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+			word-break: normal;
+		}
+		/* Each logical source line becomes its own block so wrapped continuation
+		   rows can be hang-indented (text-indent pulls the first row back to the
+		   margin; padding-left indents everything else). */
+		.reveal pre.with-copy-btn code .cl {
+			display: block;
+			position: relative;
+			padding-left: 2.5ch;
+			text-indent: -2.5ch;
+		}
+		/* Preserve the height of blank lines. Generated content is excluded from
+		   selection/copy, so the zero-width space never reaches the clipboard. */
+		.reveal pre.with-copy-btn code .cl:empty::before {
+			content: "\\200b";
+		}
+		/* Continuation marker placed at each soft-wrap point (see wrapCodeLines).
+		   user-select:none keeps it out of native select+copy. */
+		.reveal pre.with-copy-btn code .wrap-marker {
+			position: absolute;
+			left: 0;
+			text-indent: 0;
+			font-style: normal;
+			opacity: 0.4;
+			pointer-events: none;
+			user-select: none;
+			-webkit-user-select: none;
+		}
 		.copy-code-btn {
 			position: absolute;
 			top: 0.4em;
@@ -114,6 +154,80 @@ function injectStyles() {
 	document.head.appendChild(style);
 }
 
+// Wrap each logical line of a (already highlighted) <code> element in its own
+// <span class="cl"> block. hljs emits a single run of HTML with "\n"
+// separators and token <span>s that may straddle newlines, so we tokenize the
+// markup and re-open any spans still active when a line ends.
+function wrapCodeLines(codeEl) {
+	const html = codeEl.innerHTML
+	const tokenRe = /(<\/?[^>]+>)|([^<]+)/g
+	let m
+	let open = []           // stack of currently-open tag strings (hljs uses <span>)
+	let buf = ''
+	let lines = []
+	const closers = () => open.map(() => '</span>').join('')
+	const reopen = () => open.join('')
+
+	while ((m = tokenRe.exec(html)) !== null) {
+		if (m[1]) {
+			const tag = m[1]
+			if (tag[1] === '/') { open.pop(); buf += tag }
+			else if (tag.endsWith('/>')) { buf += tag }   // self-closing (rare)
+			else { open.push(tag); buf += tag }
+		} else {
+			const parts = m[2].split('\n')
+			for (let i = 0; i < parts.length; i++) {
+				if (i > 0) {
+					buf += closers()        // close spans before the line break
+					lines.push(buf)
+					buf = reopen()          // re-open them on the next line
+				}
+				buf += parts[i]
+			}
+		}
+	}
+	buf += closers()
+	lines.push(buf)
+
+	codeEl.innerHTML = lines.map(l => `<span class="cl">${l}</span>`).join('')
+}
+
+// Place a "↪" marker at the start of every wrapped continuation row. CSS has no
+// selector for soft-wrap rows, so we measure them with a Range. The deck is
+// rendered at a fixed layout width and merely CSS-scaled, so wrap positions are
+// stable; we divide measured offsets by the current scale to get layout pixels.
+function decorateWrappedLines(root, scale) {
+	if (!root) return
+	const s = scale || 1
+	for (const line of root.querySelectorAll('pre.with-copy-btn code .cl')) {
+		// Idempotent: clear any decoration from a previous pass before measuring.
+		for (const old of line.querySelectorAll('.wrap-marker')) old.remove()
+
+		const range = document.createRange()
+		range.selectNodeContents(line)
+		const rects = range.getClientRects()
+		if (!rects.length) continue
+
+		const base = line.getBoundingClientRect()
+		const tops = []
+		for (const r of rects) {
+			if (r.width === 0 && r.height === 0) continue
+			const t = Math.round(r.top - base.top)
+			if (!tops.length || Math.abs(tops[tops.length - 1] - t) > 2) tops.push(t)
+		}
+		if (tops.length <= 1) continue   // line did not wrap
+
+		for (let i = 1; i < tops.length; i++) {
+			const marker = document.createElement('span')
+			marker.className = 'wrap-marker'
+			marker.textContent = '↪'
+			marker.setAttribute('aria-hidden', 'true')
+			marker.style.top = (tops[i] / s) + 'px'
+			line.appendChild(marker)
+		}
+	}
+}
+
 function writeToClipboard(text) {
 	if (navigator.clipboard && navigator.clipboard.writeText)
 		return navigator.clipboard.writeText(text);
@@ -140,7 +254,13 @@ function addCopyButton(preEl) {
 	btn.textContent = 'copy';
 	btn.addEventListener('click', () => {
 		const code = preEl.querySelector('code');
-		const text = code ? code.innerText : preEl.innerText;
+		// Prefer the stashed raw source: it is immune to the per-line <span>
+		// wrapping and wrap markers used for display. textContent is the
+		// fallback (block-per-line collapses to no newlines under textContent,
+		// so raw is what we really want here).
+		const text = preEl.__rawCode != null
+			? preEl.__rawCode
+			: (code ? code.textContent : preEl.textContent);
 		writeToClipboard(text).then(() => {
 			btn.textContent = '✓ copied';
 			btn.classList.add('copied');
@@ -162,6 +282,17 @@ export default () => {
 		init: (deck) => {
 			injectStyles();
 
+			// Re-measure wrap points after fonts settle and on every layout change.
+			// Only the visible slide can be measured (hidden slides have no layout),
+			// so slidechanged re-runs decoration as each slide is shown.
+			const decorate = (root) => {
+				const run = () => decorateWrappedLines(root, deck.getScale());
+				if (document.fonts && document.fonts.ready)
+					document.fonts.ready.then(() => requestAnimationFrame(run));
+				else
+					requestAnimationFrame(run);
+			};
+
 			deck.on('ready', async () => {
 				const highlightPlugin = deck.getPlugin("highlight")
 
@@ -178,8 +309,12 @@ export default () => {
 				// code text and overwrites the rendered diagram.
 				for (let el of deck.getRevealElement().querySelectorAll("pre code[class]")) {
 					if (!el.classList.contains("mermaid")) {
+						const pre = el.closest('pre')
+						// Capture raw source before highlighting/line-wrapping touches the DOM.
+						if (pre) pre.__rawCode = el.textContent
 						highlightPlugin.hljs.highlightElement(el);
-						addCopyButton(el.closest('pre'));
+						wrapCodeLines(el);
+						addCopyButton(pre);
 					}
 				}
 
@@ -225,7 +360,9 @@ export default () => {
 
 						const newEl = showCode(el, language, code, showLink ? url : null, outdent)
 						if (language !== 'mermaid') {
-							highlightPlugin.hljs.highlightElement(newEl.querySelector('code') ?? newEl)
+							const codeEl = newEl.querySelector('code') ?? newEl
+							highlightPlugin.hljs.highlightElement(codeEl)
+							wrapCodeLines(codeEl)
 							addCopyButton(newEl)
 						}
 					} catch (err) {
@@ -234,10 +371,15 @@ export default () => {
 					}
 				}
 
-
+				// First pass for the slide that is visible at startup.
+				decorate(deck.getRevealElement())
 			})
 
-
+			// Slides other than the current one have no layout while hidden, so we
+			// (re)place wrap markers each time a slide becomes visible, and after
+			// any resize that changes the scale.
+			deck.on('slidechanged', (e) => decorate(e.currentSlide))
+			deck.on('resize', () => decorate(deck.getRevealElement()))
 		}
 	}
 }
