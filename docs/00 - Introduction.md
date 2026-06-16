@@ -15,6 +15,10 @@
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/refs/heads/main/examples/kafka/kafka-ephemeral.yaml
 ```
 
+```bash
+docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t yourusername/yourcontainername:1.2.3 -t yourusername/yourcontainername:latest --push .
+```
+
 ---
 ## Mermaid Example
 

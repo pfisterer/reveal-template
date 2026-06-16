@@ -87,22 +87,28 @@ function injectStyles() {
 		}
 		/* Soft-wrap long lines like VS Code's word wrap. white-space:pre-wrap is
 		   a purely visual wrap: it does NOT insert real newlines into the text.
-		   overflow-wrap:anywhere lets very long tokens / URLs break instead of
-		   overflowing the slide. Copy fidelity is handled separately (see
+		   overflow-wrap:break-word prefers breaking at whitespace and only splits a
+		   word when that single token is itself too long to fit (long URLs / base64
+		   / paths). Unlike "anywhere", it does not snap mid-word when a whitespace
+		   break is available. Copy fidelity is handled separately (see
 		   addCopyButton / wrapCodeLines), so wrapping never leaks into copied text. */
 		.reveal pre.with-copy-btn,
 		.reveal pre.with-copy-btn code {
 			white-space: pre-wrap;
-			overflow-wrap: anywhere;
+			overflow-wrap: break-word;
 			word-break: normal;
 		}
 		/* Each logical source line becomes its own block so wrapped continuation
 		   rows can be hang-indented (text-indent pulls the first row back to the
-		   margin; padding-left indents everything else). */
+		   margin; padding-left indents everything else). padding-right reserves
+		   room for the end-of-row wrap marker (see decorateWrappedLines): text
+		   wraps before that zone, so the absolutely-positioned marker lands inside
+		   the box instead of overflowing and triggering a horizontal scrollbar. */
 		.reveal pre.with-copy-btn code .cl {
 			display: block;
 			position: relative;
 			padding-left: 2.5ch;
+			padding-right: 1.5ch;
 			text-indent: -2.5ch;
 		}
 		/* Preserve the height of blank lines. Generated content is excluded from
@@ -110,11 +116,11 @@ function injectStyles() {
 		.reveal pre.with-copy-btn code .cl:empty::before {
 			content: "\\200b";
 		}
-		/* Continuation marker placed at each soft-wrap point (see wrapCodeLines).
-		   user-select:none keeps it out of native select+copy. */
+		/* Continuation marker placed at the end of each row that soft-wraps (see
+		   decorateWrappedLines). The horizontal/vertical offset is set inline per
+		   row; user-select:none keeps it out of native select+copy. */
 		.reveal pre.with-copy-btn code .wrap-marker {
 			position: absolute;
-			left: 0;
 			text-indent: 0;
 			font-style: normal;
 			opacity: 0.4;
@@ -192,10 +198,11 @@ function wrapCodeLines(codeEl) {
 	codeEl.innerHTML = lines.map(l => `<span class="cl">${l}</span>`).join('')
 }
 
-// Place a "↪" marker at the start of every wrapped continuation row. CSS has no
-// selector for soft-wrap rows, so we measure them with a Range. The deck is
-// rendered at a fixed layout width and merely CSS-scaled, so wrap positions are
-// stable; we divide measured offsets by the current scale to get layout pixels.
+// Place a "↴" marker at the end of every row that soft-wraps (i.e. every visual
+// row except the last). CSS has no selector for soft-wrap rows, so we measure
+// them with a Range. The deck is rendered at a fixed layout width and merely
+// CSS-scaled, so wrap positions are stable; we divide measured offsets by the
+// current scale to get layout pixels.
 function decorateWrappedLines(root, scale) {
 	if (!root) return
 	const s = scale || 1
@@ -209,20 +216,28 @@ function decorateWrappedLines(root, scale) {
 		if (!rects.length) continue
 
 		const base = line.getBoundingClientRect()
-		const tops = []
+		// Group the rects (one per inline fragment) into visual rows keyed by
+		// their top offset, tracking the rightmost text edge of each row — that
+		// edge is where the row visually ends, i.e. the wrap point.
+		const rows = []
 		for (const r of rects) {
 			if (r.width === 0 && r.height === 0) continue
-			const t = Math.round(r.top - base.top)
-			if (!tops.length || Math.abs(tops[tops.length - 1] - t) > 2) tops.push(t)
+			const top = Math.round(r.top - base.top)
+			const right = r.right - base.left
+			const row = rows.find(x => Math.abs(x.top - top) <= 2)
+			if (row) row.right = Math.max(row.right, right)
+			else rows.push({ top, right })
 		}
-		if (tops.length <= 1) continue   // line did not wrap
+		if (rows.length <= 1) continue   // line did not wrap
 
-		for (let i = 1; i < tops.length; i++) {
+		// Mark the end of every row except the last — those are the wrap points.
+		for (let i = 0; i < rows.length - 1; i++) {
 			const marker = document.createElement('span')
 			marker.className = 'wrap-marker'
-			marker.textContent = '↪'
+			marker.textContent = '↴'
 			marker.setAttribute('aria-hidden', 'true')
-			marker.style.top = (tops[i] / s) + 'px'
+			marker.style.top = (rows[i].top / s) + 'px'
+			marker.style.left = (rows[i].right / s) + 'px'
 			line.appendChild(marker)
 		}
 	}
