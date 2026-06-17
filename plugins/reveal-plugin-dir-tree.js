@@ -2,7 +2,7 @@
 Create a zip from existing files for download and display a tree of files
 
 Attributes on <pre class="dirtree">:
-  data-zipname="archive.zip"      — name of the downloaded zip (default: download.zip)
+  data-zipname="archive.zip"      — name of the downloaded zip; omit to hide the download button
   data-line-height="1.6"          — line spacing (default: 1.85)
   data-width="auto"               — container width, e.g. "400px", "60%", "auto" (default: auto)
 
@@ -771,7 +771,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			injectStyles();
 
 			for (const el of deck.getRevealElement().querySelectorAll('pre.dirtree')) {
-				const zipName = el.getAttribute('data-zipname') || 'download.zip';
+				const zipName = el.getAttribute('data-zipname');
 				const lineHeight = el.getAttribute('data-line-height') || '1.85';
 				const width = el.getAttribute('data-width') || 'auto';
 
@@ -789,12 +789,15 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				container.style.lineHeight = lineHeight;
 				if (width !== 'auto') container.style.width = width;
 
-				const btn = document.createElement('a');
-				btn.classList.add('dirtree-download-btn');
-				btn.textContent = '⬇ ' + zipName;
-				btn.href = '#zip/' + zipName;
-				btn.addEventListener('click', e => { e.preventDefault(); download(files, zipName); });
-				container.appendChild(btn);
+				// Only show the download button when a zip name is configured.
+				if (zipName) {
+					const btn = document.createElement('a');
+					btn.classList.add('dirtree-download-btn');
+					btn.textContent = '⬇ ' + zipName;
+					btn.href = '#zip/' + zipName;
+					btn.addEventListener('click', e => { e.preventDefault(); download(files, zipName); });
+					container.appendChild(btn);
+				}
 
 				const ul = document.createElement('ul');
 				ul.classList.add('dirtree');
