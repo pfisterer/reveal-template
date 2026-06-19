@@ -20,6 +20,16 @@ docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t yourusern
 ```
 
 ---
+
+---
+## Kafka Streams: Run It
+
+<pre class="dirtree" data-zipname="bla.zip" style="margin-left: 40px;">
+00 - Introduction.md
+npm.html
+</pre>
+
+---
 ## Mermaid Example
 
 ```mermaid
@@ -27,6 +37,13 @@ graph LR
     A["frontend<br/>0–120ms"] --> B["auth<br/>5–30ms"]
     A --> C["data<br/>35–115ms"]
     C --> D["database<br/>40–110ms"]
+```
+
+```mermaid
+flowchart LR
+  S(["Spout<br/>sentences"]) -->|sentence| SP["Bolt<br/>split"]
+  SP -->|words| C["Bolt<br/>count"]
+  C -->|"(word, count)"| OUT[/"Output"/]
 ```
 
 Some text

@@ -3,6 +3,8 @@ Create a zip from existing files for download and display a tree of files
 
 Attributes on <pre class="dirtree">:
   data-zipname="archive.zip"      — name of the downloaded zip; omit to hide the download button
+  data-root="my-project"          — label for the root folder when files have no common top-level dir
+                                    (default: zip name without ".zip", else ".")
   data-line-height="1.6"          — line spacing (default: 1.85)
   data-width="auto"               — container width, e.g. "400px", "60%", "auto" (default: auto)
 
@@ -347,24 +349,26 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				/* Download button */
 				.dirtree-download-btn {
 					position: absolute !important;
-					top: 10px !important;
-					right: 14px !important;
-					padding: 2px 10px;
+					top: 8px !important;
+					right: 12px !important;
+					padding: 1px 6px;
 					background: transparent;
-					border: 1px solid #d0d7de;
-					border-radius: 6px;
-					color: #cf222e !important;
-					font-size: 0.85em;
+					border: 1px solid #e1e4e8;
+					border-radius: 5px;
+					color: #8c959f !important;
+					font-size: 0.6em;
+					opacity: 0.6;
 					cursor: pointer;
 					text-decoration: none !important;
-					transition: background 0.15s, border-color 0.15s;
+					transition: opacity 0.15s, background 0.15s, border-color 0.15s, color 0.15s;
 					font-family: inherit;
 				}
 
 				.dirtree-download-btn:hover {
-					background: #fff5f5 !important;
-					border-color: #cf222e !important;
-					color: #cf222e !important;
+					background: #f6f8fa !important;
+					border-color: #d0d7de !important;
+					color: #57606a !important;
+					opacity: 1;
 				}
 
 				.dirtree-prefix {
@@ -652,7 +656,10 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			for (const file of files) {
 				const parts = file.split('/');
 				const filename = parts.pop();
-				getPath(tree, parts)[filename] = filename;
+				// Files without a folder prefix attach to the tree root directly;
+				// otherwise getPath(tree, []) would create a bogus "undefined" node.
+				const dir = parts.length > 0 ? getPath(tree, parts) : tree;
+				dir[filename] = filename;
 			}
 			return tree;
 		}
@@ -686,7 +693,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				});
 		}
 
-		function displayTree(el, treeNode, path, isRoot, files, zipName, ancestorLast) {
+		function displayTree(el, treeNode, path, files, zipName, ancestorLast) {
 			const names = Object.getOwnPropertyNames(treeNode);
 
 			names.forEach((name, index) => {
@@ -697,12 +704,18 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				const li = document.createElement('li');
 				li.classList.add('dirtree');
 
-				if (isRoot) {
-					li.classList.add('root');
+				const contPrefix = ancestorLast.map(last => last ? '    ' : '│   ').join('');
+				const connector = isLast ? '└── ' : '├── ';
 
+				const prefixSpan = document.createElement('span');
+				prefixSpan.classList.add('dirtree-prefix');
+				prefixSpan.textContent = contPrefix + connector;
+				li.appendChild(prefixSpan);
+
+				if (isDir) {
 					const icon = document.createElement('span');
 					icon.classList.add('dirtree-icon');
-					icon.textContent = '📁';
+					icon.textContent = '📂';
 
 					const nameSpan = document.createElement('span');
 					nameSpan.classList.add('dirtree-dir-name');
@@ -715,56 +728,60 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					const ul = document.createElement('ul');
 					ul.classList.add('dirtree');
 					li.appendChild(ul);
-					displayTree(ul, o, `${path}/${name}`, false, files, zipName, []);
+					displayTree(ul, o, `${path}/${name}`, files, zipName, [...ancestorLast, isLast]);
 
 				} else {
-					const contPrefix = ancestorLast.map(last => last ? '    ' : '│   ').join('');
-					const connector = isLast ? '└── ' : '├── ';
+					const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
 
-					const prefixSpan = document.createElement('span');
-					prefixSpan.classList.add('dirtree-prefix');
-					prefixSpan.textContent = contPrefix + connector;
-					li.appendChild(prefixSpan);
+					const icon = document.createElement('span');
+					icon.classList.add('dirtree-icon');
+					icon.textContent = getFileIcon(name, ext);
 
-					if (isDir) {
-						const icon = document.createElement('span');
-						icon.classList.add('dirtree-icon');
-						icon.textContent = '📂';
+					const finalPath = `${path}/${o}`.replace(/^\//, '');
+					const a = document.createElement('a');
+					a.classList.add('dirtree-file-link');
+					a.href = finalPath;
+					a.textContent = o;
 
-						const nameSpan = document.createElement('span');
-						nameSpan.classList.add('dirtree-dir-name');
-						nameSpan.textContent = name;
-
-						li.appendChild(icon);
-						li.appendChild(nameSpan);
-						el.appendChild(li);
-
-						const ul = document.createElement('ul');
-						ul.classList.add('dirtree');
-						li.appendChild(ul);
-						displayTree(ul, o, `${path}/${name}`, false, files, zipName, [...ancestorLast, isLast]);
-
-					} else {
-						const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-
-						const icon = document.createElement('span');
-						icon.classList.add('dirtree-icon');
-						icon.textContent = getFileIcon(name, ext);
-
-						const finalPath = `${path}/${o}`.replace(/^\//, '');
-						const a = document.createElement('a');
-						a.classList.add('dirtree-file-link');
-						a.href = finalPath;
-						a.textContent = o;
-
-						li.appendChild(icon);
-						li.appendChild(a);
-						li.appendChild(makePreviewButton(finalPath, o, ext));
-						li.appendChild(makeCopyButton(finalPath));
-						el.appendChild(li);
-					}
+					li.appendChild(icon);
+					li.appendChild(a);
+					li.appendChild(makePreviewButton(finalPath, o, ext));
+					li.appendChild(makeCopyButton(finalPath));
+					el.appendChild(li);
 				}
 			});
+		}
+
+		// Render the decorative root folder, then its contents. When every file
+		// shares a single top-level directory, that directory becomes the root
+		// (and stays in the file paths). Otherwise we show a label-only root
+		// (data-root, else the zip name, else ".") that is NOT part of any path.
+		function displayRoot(el, tree, rootLabel, files, zipName) {
+			const topNames = Object.getOwnPropertyNames(tree);
+			const singleRootDir = topNames.length === 1 && typeof tree[topNames[0]] === 'object';
+			const rootName = singleRootDir ? topNames[0] : rootLabel;
+			const childTree = singleRootDir ? tree[rootName] : tree;
+			const childPath = singleRootDir ? `/${rootName}` : '';
+
+			const li = document.createElement('li');
+			li.classList.add('dirtree', 'root');
+
+			const icon = document.createElement('span');
+			icon.classList.add('dirtree-icon');
+			icon.textContent = '📁';
+
+			const nameSpan = document.createElement('span');
+			nameSpan.classList.add('dirtree-dir-name');
+			nameSpan.textContent = rootName;
+
+			li.appendChild(icon);
+			li.appendChild(nameSpan);
+			el.appendChild(li);
+
+			const ul = document.createElement('ul');
+			ul.classList.add('dirtree');
+			li.appendChild(ul);
+			displayTree(ul, childTree, childPath, files, zipName, []);
 		}
 
 		deck.on('ready', () => {
@@ -803,7 +820,8 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				ul.classList.add('dirtree');
 				container.appendChild(ul);
 
-				displayTree(ul, tree, '', true, files, zipName, []);
+				const rootLabel = el.getAttribute('data-root') || (zipName ? zipName.replace(/\.zip$/i, '') : '.');
+				displayRoot(ul, tree, rootLabel, files, zipName);
 
 				el.parentElement.replaceChild(container, el);
 			}

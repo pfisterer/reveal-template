@@ -155,7 +155,14 @@ const defaultRevealOptions = {
 			secondaryColor: '#5c6971',
 			secondaryTextColor: '#000',
 			tertiaryColor: '#e8e8e8',
-			loopTextColor: '#4a4a4a'
+			loopTextColor: '#4a4a4a',
+			// timeline / journey color scale (DHBW red + grey, alternating)
+			cScale0: '#e2001a', cScaleLabel0: '#ffffff',
+			cScale1: '#5c6971', cScaleLabel1: '#ffffff',
+			cScale2: '#e2001a', cScaleLabel2: '#ffffff',
+			cScale3: '#5c6971', cScaleLabel3: '#ffffff',
+			cScale4: '#e2001a', cScaleLabel4: '#ffffff',
+			cScale5: '#5c6971', cScaleLabel5: '#ffffff'
 		},
 		sequence: {
 			mirrorActors: false,
