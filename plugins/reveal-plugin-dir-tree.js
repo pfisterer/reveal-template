@@ -38,6 +38,12 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					position: relative !important;
 				}
 
+					/* Without a download button there is nothing to clear at the top,
+					   so drop the reserved space the button would otherwise occupy. */
+					.dirtree-container.no-download {
+						padding-top: 14px;
+					}
+
 				ul.dirtree {
 					list-style: none !important;
 					padding: 0 !important;
@@ -814,6 +820,9 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					btn.href = '#zip/' + zipName;
 					btn.addEventListener('click', e => { e.preventDefault(); download(files, zipName); });
 					container.appendChild(btn);
+				} else {
+					// No button means no need to reserve top padding for it.
+					container.classList.add('no-download');
 				}
 
 				const ul = document.createElement('ul');
