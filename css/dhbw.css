@@ -19,6 +19,9 @@ html.dim-background-strong .slide-background {
   opacity: 0.05 !important;
 }
 
+
+
+
 /*********************************************
  * GLOBAL STYLES
  *********************************************/
@@ -783,3 +786,7 @@ ul.dirtree ul ul ul li {
 }
 
 /** Dirtree plugin: end */
+
+.reveal .flow-around ul {
+  display: block;
+}
