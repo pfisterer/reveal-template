@@ -283,6 +283,11 @@ body {
   border-collapse: collapse;
   border-spacing: 0;
   font-size: 70%;
+}
+
+/* Outer/cell borders only for content tables, not the toc_table
+   (which has its own border rules further down). */
+.reveal table:not(.toc_table) {
   border: 1px solid #d0d0d0;
 }
 
@@ -293,6 +298,9 @@ body {
 .reveal table th, .reveal table td {
   text-align: left;
   padding: 0.2em 0.5em 0.2em 0.5em;
+}
+
+.reveal table:not(.toc_table) th, .reveal table:not(.toc_table) td {
   border: 1px solid #d0d0d0;
 }
 
