@@ -486,8 +486,12 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 		let modalRefs = null;
 
 		// View preferences persist across previews within a session.
-		const FONT_MIN = 11, FONT_MAX = 32, FONT_STEP = 2;
-		let previewFontPx = 16;
+		// FONT_FIT_MAX caps the automatic enlarge-to-fit for small files so a
+		// two-line file does not blow up to an absurd size; manual A+ can still
+		// climb to FONT_MAX.
+		const FONT_MIN = 11, FONT_MAX = 32, FONT_FIT_MAX = 28, FONT_STEP = 2;
+		const FONT_BASE = 16;
+		let previewFontPx = FONT_BASE;
 		let previewTheme = 'light';   // 'light' | 'dark'
 
 		function ensureModal() {
@@ -521,6 +525,32 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				code.style.fontSize = previewFontPx + 'px';
 				body.classList.toggle('dark', previewTheme === 'dark');
 				themeBtn.textContent = previewTheme === 'dark' ? '☀ light' : '🌙 dark';
+			}
+
+			// Small files render a few short lines of fixed-size text marooned in a
+			// big modal, which reads as "tiny font in an undersized window". Scale
+			// the font UP so the content fills the available width/height — but only
+			// up (scale > 1), so large files that already fill the modal keep their
+			// comfortable base size. Measured at FONT_BASE, then capped at
+			// FONT_FIT_MAX so a two-liner doesn't balloon. Sets previewFontPx so the
+			// A−/A+ buttons continue from the fitted size.
+			function fitFontToContent() {
+				code.style.fontSize = FONT_BASE + 'px';
+				// scrollWidth/Height force a layout read of the content's natural size
+				// (white-space:pre means width is the longest line).
+				const contentW = code.scrollWidth;
+				const contentH = code.scrollHeight;
+				if (!contentW || !contentH) { applyView(); return; }
+				// Available space: body width is the modal's fixed width; for height
+				// the modal grows with content, so derive the ceiling from the
+				// viewport (overlay is fixed inset:0) minus the header, matching the
+				// modal's max-height:92vh with a little slack.
+				const availW = body.clientWidth;
+				const availH = overlay.clientHeight * 0.9 - header.offsetHeight;
+				const scale = Math.min(availW / contentW, availH / contentH);
+				if (scale > 1)
+					previewFontPx = Math.min(FONT_FIT_MAX, Math.floor(FONT_BASE * scale));
+				applyView();
 			}
 
 			const fontDecBtn = document.createElement('button');
@@ -599,13 +629,16 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 			applyView();   // initialise font-size, theme class and toggle label
 
-			modalRefs = { overlay, title, code, body, close, applyView };
+			modalRefs = { overlay, title, code, body, close, applyView, fitFontToContent };
 			return modalRefs;
 		}
 
 		function openPreview(filePath, fileName, ext) {
-			const { overlay, title, code, body, applyView } = ensureModal();
+			const { overlay, title, code, body, applyView, fitFontToContent } = ensureModal();
 			title.textContent = fileName;
+			// Re-fit each file from the base size rather than carrying over the last
+			// file's fitted size.
+			previewFontPx = FONT_BASE;
 			code.textContent = 'Loading…';
 			// Reset highlight state so the reused element can be re-highlighted.
 			code.removeAttribute('class');
@@ -631,6 +664,8 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 						if (lang) code.classList.add('language-' + lang);
 						try { hljs.highlightElement(code); } catch (e) { /* leave as plain text */ }
 					}
+					// Enlarge small files to fill the modal (no-op for large files).
+					fitFontToContent();
 				})
 				.catch(err => { code.textContent = 'Failed to load file: ' + err.message; });
 		}

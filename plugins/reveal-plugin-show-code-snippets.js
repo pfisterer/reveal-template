@@ -7,6 +7,15 @@ Parameters:
 - data-begin-nth: Start after the Nth occurrence of data-begin instead of the first (optional, 1-based)
 - data-end: End indicator in the file (optional)
 - data-link: Show a link to the file (optional)
+- data-no-wrap: Disable soft line wrapping; long lines scroll horizontally instead (optional)
+
+For inline markdown code fences, disable wrapping with a no-wrap class or a
+data-no-wrap attribute via reveal's element-attribute comment, e.g.
+
+```console
+199.72.81.55 - - [01/Jul/1995:00:00:01 -0400] "GET /history/apollo/ HTTP/1.0" 200 6245
+```
+<!-- .element: class="no-wrap" -->
 
 Example
 
@@ -97,6 +106,20 @@ function injectStyles() {
 			white-space: pre-wrap;
 			overflow-wrap: break-word;
 			word-break: normal;
+		}
+		/* Opt-out: with data-no-wrap (or a "no-wrap" class on the <pre>) long lines
+		   are kept on one line and the block scrolls horizontally instead. These
+		   blocks are never run through wrapCodeLines/decorateWrappedLines, so the
+		   .cl hang-indent and wrap markers above never apply to them. Declared
+		   after the wrapping rules so equal-specificity selectors win on order. */
+		.reveal pre.with-copy-btn.no-wrap,
+		.reveal pre.with-copy-btn.no-wrap code {
+			white-space: pre;
+			overflow-wrap: normal;
+			word-break: normal;
+		}
+		.reveal pre.with-copy-btn.no-wrap {
+			overflow-x: auto;
 		}
 		/* Each logical source line becomes its own block so wrapped continuation
 		   rows can be hang-indented (text-indent pulls the first row back to the
@@ -328,7 +351,14 @@ export default () => {
 						// Capture raw source before highlighting/line-wrapping touches the DOM.
 						if (pre) pre.__rawCode = el.textContent
 						highlightPlugin.hljs.highlightElement(el);
-						wrapCodeLines(el);
+						// Opt-out authored on the <pre> or <code> — either a "no-wrap"
+						// class or a data-no-wrap attribute. Reveal's markdown
+						// `<!-- .element: ... -->` may land the attribute on either
+						// element, so check both.
+						const optOut = n => n && (n.classList.contains('no-wrap') || n.hasAttribute('data-no-wrap'))
+						const noWrap = optOut(pre) || optOut(el)
+						if (noWrap) pre && pre.classList.add('no-wrap')
+						else wrapCodeLines(el);
 						addCopyButton(pre);
 					}
 				}
@@ -342,6 +372,7 @@ export default () => {
 					let endMarker = el.getAttribute("data-end")
 					let showLink = el.hasAttribute("data-link")
 					let outdentCode = el.hasAttribute("data-outdent")
+					let noWrap = el.hasAttribute("data-no-wrap")
 
 					//console.log(`language = ${language}, url = ${url}, beginMarker = ${beginMarker}, endMarker = ${endMarker}, showLink = ${showLink} `)
 
@@ -377,7 +408,8 @@ export default () => {
 						if (language !== 'mermaid') {
 							const codeEl = newEl.querySelector('code') ?? newEl
 							highlightPlugin.hljs.highlightElement(codeEl)
-							wrapCodeLines(codeEl)
+							if (noWrap) newEl.classList.add('no-wrap')
+							else wrapCodeLines(codeEl)
 							addCopyButton(newEl)
 						}
 					} catch (err) {
