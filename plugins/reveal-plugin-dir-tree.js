@@ -7,6 +7,11 @@ Attributes on <pre class="dirtree">:
                                     (default: zip name without ".zip", else ".")
   data-line-height="1.6"          — line spacing (default: 1.85)
   data-width="auto"               — container width, e.g. "400px", "60%", "auto" (default: auto)
+  data-columns="auto"             — wrap a dense tree into multiple columns when it
+                                    gets too tall for the slide (default: "auto").
+                                    "auto" picks the count from the number of entries
+                                    (>12 → 2, >24 → 3); "2"/"3"/… forces a fixed
+                                    count; "1" (or "none") keeps a single column.
 
 <pre class="dirtree" data-zipname="k8s-Exercise.zip" data-line-height="1.6" data-width="480px">
 code/k8s-demo-app/01-mariadb-deployment.yaml
@@ -387,6 +392,32 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				.dirtree-icon {
 					margin-right: 4px;
 					flex-shrink: 0;
+				}
+
+				/* Multi-column layout for dense trees (opt-in via data-columns).
+				   column-count is set inline so the number can be dynamic. Each
+				   direct child subtree is kept whole so a directory and its files
+				   never split across the column boundary. */
+				ul.dirtree.dirtree-columns {
+					column-gap: 1.6em;
+					column-rule: 1px solid #e1e4e8;
+				}
+
+				ul.dirtree.dirtree-columns > li.dirtree {
+					-webkit-column-break-inside: avoid;
+					break-inside: avoid;
+				}
+
+				/* Several non-wrapping columns side by side can grow wider than the
+				   slide. Shrink the tree a touch and trim the side padding in
+				   multi-column mode so both columns fit the slide width. */
+				.dirtree-container.dirtree-multicol {
+					padding-left: 12px;
+					padding-right: 12px;
+				}
+
+				.dirtree-container.dirtree-multicol li.dirtree {
+					font-size: 13px;
 				}
 			`;
 			document.head.appendChild(style);
@@ -825,6 +856,43 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			displayTree(ul, childTree, childPath, files, zipName, []);
 		}
 
+		// Spread a dense tree over several columns. The tree usually hangs off a
+		// single root chain (e.g. code → use-case → …), so columnising the
+		// container itself can't split anything. Instead we target the ul that
+		// holds the most direct entries — the branch point — and let its child
+		// subtrees flow into columns. Each line already carries its full ASCII
+		// prefix as text, so a line stays readable in any column.
+		function applyColumns(rootUl, columns) {
+			if (!columns || columns === '1' || columns === 'none') return;
+
+			let branch = null, max = -1;
+			for (const u of rootUl.querySelectorAll('ul.dirtree')) {
+				const count = Array.from(u.children).filter(c => c.tagName === 'LI').length;
+				if (count > max) { max = count; branch = u; }
+			}
+			if (!branch) return;
+
+			// "auto" scales with the total number of rendered lines (the tree's
+			// height), not the entries of any single directory — a tree can be
+			// tall while every individual folder stays small.
+			let n;
+			if (columns === 'auto') {
+				const total = rootUl.querySelectorAll('li.dirtree').length;
+				n = total > 40 ? 3 : total > 14 ? 2 : 1;
+			} else {
+				n = parseInt(columns, 10);
+			}
+			if (!Number.isFinite(n) || n < 2) return;
+
+			branch.classList.add('dirtree-columns');
+			branch.style.columnCount = String(n);
+
+			// Mark the container so the multi-column sizing rules apply (smaller
+			// font + tighter padding to keep the wider layout on the slide).
+			const container = branch.closest('.dirtree-container');
+			if (container) container.classList.add('dirtree-multicol');
+		}
+
 		deck.on('ready', () => {
 			injectStyles();
 
@@ -832,6 +900,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				const zipName = el.getAttribute('data-zipname');
 				const lineHeight = el.getAttribute('data-line-height') || '1.85';
 				const width = el.getAttribute('data-width') || 'auto';
+				const columns = el.getAttribute('data-columns') || 'auto';
 
 				const files = getFileList(el);
 				const tree = createTree(files);
@@ -866,6 +935,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 				const rootLabel = el.getAttribute('data-root') || (zipName ? zipName.replace(/\.zip$/i, '') : '.');
 				displayRoot(ul, tree, rootLabel, files, zipName);
+				applyColumns(ul, columns);
 
 				el.parentElement.replaceChild(container, el);
 			}
