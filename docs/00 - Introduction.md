@@ -38,6 +38,17 @@ test-code.c
 </pre>
 
 ---
+# Table
+
+| Name         | Description                                                             |
+| ------------ | ----------------------------------------------------------------------- |
+| File sink    | Stores the output to a directory                                        |
+| Kafka sink   | Stores the output to one or more topics in Kafka                        |
+| Foreach sink | Runs arbitrary computation on each record                               |
+| Console sink | Prints to stdout (debug only, collects data in driver program)          |
+| Memory sink  | Stored as in-memory table (debug only, collects data in driver program) |
+
+---
 ## Mermaid Example
 
 ```mermaid

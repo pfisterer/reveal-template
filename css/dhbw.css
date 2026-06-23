@@ -283,7 +283,7 @@ body {
   border-collapse: collapse;
   border-spacing: 0;
   font-size: 70%;
-
+  border: 1px solid #d0d0d0;
 }
 
 .reveal table th {
@@ -293,7 +293,13 @@ body {
 .reveal table th, .reveal table td {
   text-align: left;
   padding: 0.2em 0.5em 0.2em 0.5em;
-  border-bottom: 1px solid;
+  border: 1px solid #d0d0d0;
+}
+
+/* Zebra striping: alternating white / very light grey rows.
+   The toc_table has its own border/background rules, so exclude it. */
+.reveal table:not(.toc_table) tbody tr:nth-child(even) {
+  background-color: #fbfbfb;
 }
 
 .reveal table th[align="center"], .reveal table td[align="center"] {
@@ -302,10 +308,6 @@ body {
 
 .reveal table th[align="right"], .reveal table td[align="right"] {
   text-align: right;
-}
-
-.reveal table tr:last-child td {
-  border-bottom: none;
 }
 
 .reveal sup {
