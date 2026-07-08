@@ -318,6 +318,12 @@ body {
   text-align: right;
 }
 
+/* Hide table header rows whose cells are all empty
+   (markdown table syntax requires a header line). */
+.reveal table thead:not(:has(th:not(:empty))) {
+  display: none;
+}
+
 .reveal sup {
   vertical-align: super;
 }
