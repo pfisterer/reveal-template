@@ -278,6 +278,18 @@ body {
   box-shadow: none !important;
 }
 
+/* Mermaid block diagrams (block-beta): white labels on the DHBW red/grey
+   blocks. Mermaid does not reliably apply nodeTextColor / classDef color to
+   block labels, and it injects its own id-scoped styles into the SVG, so
+   !important is required to win. */
+.reveal svg[aria-roledescription="block"] .label,
+.reveal svg[aria-roledescription="block"] .label text,
+.reveal svg[aria-roledescription="block"] .label span,
+.reveal svg[aria-roledescription="block"] .label p {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
 .reveal table {
   margin: auto;
   border-collapse: collapse;

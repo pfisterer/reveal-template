@@ -147,7 +147,10 @@ const defaultRevealOptions = {
 		themeVariables: {
 			textColor: '#000',
 			primaryColor: '#e2001a',
-			primaryTextColor: '#ffff',
+			primaryTextColor: '#ffffff',
+			// block/flowchart node labels derive from nodeTextColor; set it
+			// explicitly so block-beta diagrams get white-on-red like flowcharts
+			nodeTextColor: '#ffffff',
 			noteBkgColor: '#ededeb',
 			fontFamily: 'arial',
 			lineColor: '#5c6971',
@@ -180,6 +183,10 @@ const defaultRevealOptions = {
 			nodeSpacing: 70,
 			rankSpacing: 90,
 			subGraphTitleMargin: { top: 8, bottom: 8 }
+		},
+		block: {
+			useMaxWidth: true,
+			padding: 8
 		}
 	},
 
