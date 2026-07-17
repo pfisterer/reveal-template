@@ -4,16 +4,18 @@ Create a zip from existing files for download and display a tree of files
 Attributes on <pre class="dirtree">:
   data-zipname="archive.zip"      — name of the downloaded zip; omit to hide the download button
   data-root="my-project"          — label for the root folder when files have no common top-level dir
-                                    (default: zip name without ".zip", else ".")
-  data-line-height="1.6"          — line spacing (default: 1.85)
+									(default: zip name without ".zip", else ".")
+  data-strip-prefix="code/"       — hide this leading path segment in the displayed tree (and in the
+									zip entry names); links and downloads still use the full path.
+									Paths that do not start with the prefix are shown unchanged.
   data-width="auto"               — container width, e.g. "400px", "60%", "auto" (default: auto)
   data-columns="auto"             — wrap a dense tree into multiple columns when it
-                                    gets too tall for the slide (default: "auto").
-                                    "auto" picks the count from the number of entries
-                                    (>12 → 2, >24 → 3); "2"/"3"/… forces a fixed
-                                    count; "1" (or "none") keeps a single column.
+									gets too tall for the slide (default: "auto").
+									"auto" picks the count from the number of entries
+									(>12 → 2, >24 → 3); "2"/"3"/… forces a fixed
+									count; "1" (or "none") keeps a single column.
 
-<pre class="dirtree" data-zipname="k8s-Exercise.zip" data-line-height="1.6" data-width="480px">
+<pre class="dirtree" data-zipname="k8s-Exercise.zip" data-width="480px">
 code/k8s-demo-app/01-mariadb-deployment.yaml
 code/k8s-demo-app/02-k8s-mariadb-service.yaml
 code/k8s-demo-app/Dockerfile
@@ -32,16 +34,25 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			style.textContent = `
 				.dirtree-container {
 					font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+					/* Tight enough that the │ connectors of consecutive lines nearly
+					   join into a continuous rule, the way tree(1) output looks.
+					   Every line in the tree inherits this — see the rule below. */
+					line-height: 1.0;
 					background: transparent;
 					border-radius: 10px;
 					padding: 38px 18px 14px 18px;
 					border: 1px solid #d0d7de;
 					display: inline-block;
-					min-width: 280px;
 					max-width: 90%;
 					text-align: left;
 					position: relative !important;
 				}
+
+					/* The download button needs a minimum width to not overlap the
+					   tree; without one the box shrink-wraps the file names. */
+					.dirtree-container:not(.no-download) {
+						min-width: 280px;
+					}
 
 					/* Without a download button there is nothing to clear at the top,
 					   so drop the reserved space the button would otherwise occupy. */
@@ -53,6 +64,17 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					list-style: none !important;
 					padding: 0 !important;
 					margin: 0 !important;
+				}
+
+				/* Reveal styles .reveal ul/li with a higher specificity than this
+				   plugin can reach with element selectors, so the tree's lines
+				   picked up reveal's line-heights instead of the configured one —
+				   different ones for the root (46.5px) and the nested lists (24px),
+				   which showed up as a blank line's worth of slack under the root.
+				   Force every line back onto the container's line-height. */
+				ul.dirtree,
+				li.dirtree {
+					line-height: inherit !important;
 				}
 
 				ul.dirtree ul.dirtree {
@@ -74,10 +96,12 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					border: none !important;
 				}
 
+				/* The root is the same line as any other, only weighted heavier —
+				   the extra gap made it read as a heading above the tree instead
+				   of as the branch the connectors hang off. */
 				li.dirtree.root {
 					color: #0969da;
 					font-weight: 600;
-					margin-bottom: 2px;
 				}
 
 				.dirtree-dir-name {
@@ -389,23 +413,38 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					flex-shrink: 0;
 				}
 
+				/* Icons are inline SVG, sized in em so they track the line's font
+				   size (incl. the smaller multi-column mode) and sit on the text
+				   baseline — which emoji, rendered by the platform's own font,
+				   never reliably did. */
 				.dirtree-icon {
-					margin-right: 4px;
+					display: inline-flex;
+					align-items: center;
+					margin-right: 6px;
 					flex-shrink: 0;
+					color: #57606a;
+				}
+
+				.dirtree-icon svg {
+					width: 1em;
+					height: 1em;
+					display: block;
+					fill: currentColor;
+				}
+
+				/* Folders take the same blue as their label; files stay neutral so
+				   the green link text carries the emphasis. */
+				.dirtree-icon.dirtree-icon-dir {
+					color: #54aeff;
 				}
 
 				/* Multi-column layout for dense trees (opt-in via data-columns).
-				   column-count is set inline so the number can be dynamic. Each
-				   direct child subtree is kept whole so a directory and its files
-				   never split across the column boundary. */
+				   column-count is set inline so the number can be dynamic. The
+				   whole tree flows through the columns and may break anywhere, so
+				   every column starts at the top of the box — see applyColumns. */
 				ul.dirtree.dirtree-columns {
 					column-gap: 1.6em;
 					column-rule: 1px solid #e1e4e8;
-				}
-
-				ul.dirtree.dirtree-columns > li.dirtree {
-					-webkit-column-break-inside: avoid;
-					break-inside: avoid;
 				}
 
 				/* Several non-wrapping columns side by side can grow wider than the
@@ -423,20 +462,17 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			document.head.appendChild(style);
 		}
 
-		function getFileIcon(name, ext) {
-			if (name.toLowerCase() === 'dockerfile') return '🐳';
-			const icons = {
-				js: '📜', ts: '📜', jsx: '📜', tsx: '📜',
-				json: '📋', yaml: '📋', yml: '📋', toml: '📋', xml: '📋',
-				md: '📝', txt: '📝', rst: '📝',
-				html: '🌐', css: '🎨', scss: '🎨',
-				sh: '⚙️', bash: '⚙️', zsh: '⚙️',
-				py: '🐍', rb: '💎', go: '🔷', rs: '🦀', java: '☕',
-				png: '🖼️', jpg: '🖼️', jpeg: '🖼️', svg: '🖼️', gif: '🖼️',
-				zip: '📦', tar: '📦', gz: '📦',
-				sql: '🗄️',
-			};
-			return icons[ext] || '📄';
+		// Octicons (GitHub, MIT licensed), inlined so the plugin stays
+		// dependency-free and renders identically on every platform.
+		const ICON_DIR = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"/></svg>';
+		const ICON_FILE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"/></svg>';
+
+		function makeIcon(svg, isDir) {
+			const span = document.createElement('span');
+			span.classList.add('dirtree-icon');
+			if (isDir) span.classList.add('dirtree-icon-dir');
+			span.innerHTML = svg;
+			return span;
 		}
 
 		function writeToClipboard(text) {
@@ -717,6 +753,15 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			return el.innerText.split('\n').filter(e => e.trim().length > 0);
 		}
 
+		// "code", "code/" and "/code" all mean the same thing to the author, so
+		// normalise to a "code/" form that can be tested with startsWith().
+		function normalizePrefix(prefix) {
+			if (!prefix) return '';
+			let s = prefix.trim().replace(/^\/+/, '');
+			if (s && !s.endsWith('/')) s += '/';
+			return s;
+		}
+
 		function createTree(files) {
 			function getPath(tree, path) {
 				let node = tree[path[0]];
@@ -747,7 +792,9 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			URL.revokeObjectURL(url);
 		}
 
-		function download(files, zipName) {
+		// files are fetched by their real path; entryNames[i] is the name file[i]
+		// gets inside the zip (stripped, so the archive matches the displayed tree).
+		function download(files, entryNames, zipName) {
 			Promise.all(files.map(f => fetch(f, { credentials: 'include' })))
 				.then(responses => {
 					if (responses.some(r => r.status === 401)) {
@@ -756,7 +803,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					}
 					return Promise.all(responses.map(r => r.text())).then(values => {
 						const entries = {};
-						values.forEach((text, i) => { entries[files[i]] = strToU8(text); });
+						values.forEach((text, i) => { entries[entryNames[i]] = strToU8(text); });
 						zip(entries, (err, data) => {
 							if (err) { console.error('zip failed', err); return; }
 							downloadBlob(new Blob([data], { type: 'application/zip' }), zipName);
@@ -765,7 +812,9 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				});
 		}
 
-		function displayTree(el, treeNode, path, files, zipName, ancestorLast) {
+		// path is the displayed path (prefix already stripped); pathMap translates
+		// it back to the real path used for links, previews and copying.
+		function displayTree(el, treeNode, path, pathMap, ancestorLast) {
 			const names = Object.getOwnPropertyNames(treeNode);
 
 			names.forEach((name, index) => {
@@ -785,9 +834,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				li.appendChild(prefixSpan);
 
 				if (isDir) {
-					const icon = document.createElement('span');
-					icon.classList.add('dirtree-icon');
-					icon.textContent = '📂';
+					const icon = makeIcon(ICON_DIR, true);
 
 					const nameSpan = document.createElement('span');
 					nameSpan.classList.add('dirtree-dir-name');
@@ -800,16 +847,15 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					const ul = document.createElement('ul');
 					ul.classList.add('dirtree');
 					li.appendChild(ul);
-					displayTree(ul, o, `${path}/${name}`, files, zipName, [...ancestorLast, isLast]);
+					displayTree(ul, o, `${path}/${name}`, pathMap, [...ancestorLast, isLast]);
 
 				} else {
 					const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
 
-					const icon = document.createElement('span');
-					icon.classList.add('dirtree-icon');
-					icon.textContent = getFileIcon(name, ext);
+					const icon = makeIcon(ICON_FILE, false);
 
-					const finalPath = `${path}/${o}`.replace(/^\//, '');
+					const displayPath = `${path}/${o}`.replace(/^\//, '');
+					const finalPath = pathMap.get(displayPath) || displayPath;
 					const a = document.createElement('a');
 					a.classList.add('dirtree-file-link');
 					a.href = finalPath;
@@ -828,7 +874,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 		// shares a single top-level directory, that directory becomes the root
 		// (and stays in the file paths). Otherwise we show a label-only root
 		// (data-root, else the zip name, else ".") that is NOT part of any path.
-		function displayRoot(el, tree, rootLabel, files, zipName) {
+		function displayRoot(el, tree, rootLabel, pathMap) {
 			const topNames = Object.getOwnPropertyNames(tree);
 			const singleRootDir = topNames.length === 1 && typeof tree[topNames[0]] === 'object';
 			const rootName = singleRootDir ? topNames[0] : rootLabel;
@@ -838,9 +884,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			const li = document.createElement('li');
 			li.classList.add('dirtree', 'root');
 
-			const icon = document.createElement('span');
-			icon.classList.add('dirtree-icon');
-			icon.textContent = '📁';
+			const icon = makeIcon(ICON_DIR, true);
 
 			const nameSpan = document.createElement('span');
 			nameSpan.classList.add('dirtree-dir-name');
@@ -853,24 +897,20 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			const ul = document.createElement('ul');
 			ul.classList.add('dirtree');
 			li.appendChild(ul);
-			displayTree(ul, childTree, childPath, files, zipName, []);
+			displayTree(ul, childTree, childPath, pathMap, []);
 		}
 
-		// Spread a dense tree over several columns. The tree usually hangs off a
-		// single root chain (e.g. code → use-case → …), so columnising the
-		// container itself can't split anything. Instead we target the ul that
-		// holds the most direct entries — the branch point — and let its child
-		// subtrees flow into columns. Each line already carries its full ASCII
-		// prefix as text, so a line stays readable in any column.
+		// Spread a dense tree over several columns. The multi-column context goes
+		// on the OUTERMOST ul and subtrees are allowed to break across it, so both
+		// columns fill from the top of the box. Columnising the deepest branch
+		// instead (and keeping its subtrees whole) sounds tidier, but a column box
+		// cannot start above its own element: with the branch sitting several
+		// levels down the root chain, every column but the first began halfway
+		// down the container and left the top corner empty. A subtree split across
+		// the boundary stays readable because each line carries its full ASCII
+		// prefix as text.
 		function applyColumns(rootUl, columns) {
 			if (!columns || columns === '1' || columns === 'none') return;
-
-			let branch = null, max = -1;
-			for (const u of rootUl.querySelectorAll('ul.dirtree')) {
-				const count = Array.from(u.children).filter(c => c.tagName === 'LI').length;
-				if (count > max) { max = count; branch = u; }
-			}
-			if (!branch) return;
 
 			// "auto" scales with the total number of rendered lines (the tree's
 			// height), not the entries of any single directory — a tree can be
@@ -884,12 +924,12 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			}
 			if (!Number.isFinite(n) || n < 2) return;
 
-			branch.classList.add('dirtree-columns');
-			branch.style.columnCount = String(n);
+			rootUl.classList.add('dirtree-columns');
+			rootUl.style.columnCount = String(n);
 
 			// Mark the container so the multi-column sizing rules apply (smaller
 			// font + tighter padding to keep the wider layout on the slide).
-			const container = branch.closest('.dirtree-container');
+			const container = rootUl.closest('.dirtree-container');
 			if (container) container.classList.add('dirtree-multicol');
 		}
 
@@ -898,22 +938,23 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 			for (const el of deck.getRevealElement().querySelectorAll('pre.dirtree')) {
 				const zipName = el.getAttribute('data-zipname');
-				const lineHeight = el.getAttribute('data-line-height') || '1.85';
 				const width = el.getAttribute('data-width') || 'auto';
 				const columns = el.getAttribute('data-columns') || 'auto';
+				const stripPrefix = normalizePrefix(el.getAttribute('data-strip-prefix'));
 
 				const files = getFileList(el);
-				const tree = createTree(files);
+				// The tree (and therefore every label in it) is built from the
+				// stripped paths; pathMap maps each of them back to the real file.
+				const displayFiles = files.map(f => f.startsWith(stripPrefix) ? f.slice(stripPrefix.length) : f);
+				const pathMap = new Map(displayFiles.map((d, i) => [d, files[i]]));
+				const tree = createTree(displayFiles);
 
 				const container = document.createElement('div');
 				container.classList.add('dirtree-container');
-				container.style.lineHeight = lineHeight;
-				if (width !== 'auto') container.style.width = width;
 
 				// Forward font-size (and other inline styles) from the <pre>
 				if (el.getAttribute('style')) container.setAttribute('style', el.getAttribute('style'));
 				// Re-apply data-driven styles on top (inline style from <pre> must not override these)
-				container.style.lineHeight = lineHeight;
 				if (width !== 'auto') container.style.width = width;
 
 				// Only show the download button when a zip name is configured.
@@ -922,7 +963,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					btn.classList.add('dirtree-download-btn');
 					btn.textContent = '⬇ ' + zipName;
 					btn.href = '#zip/' + zipName;
-					btn.addEventListener('click', e => { e.preventDefault(); download(files, zipName); });
+					btn.addEventListener('click', e => { e.preventDefault(); download(files, displayFiles, zipName); });
 					container.appendChild(btn);
 				} else {
 					// No button means no need to reserve top padding for it.
@@ -934,7 +975,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				container.appendChild(ul);
 
 				const rootLabel = el.getAttribute('data-root') || (zipName ? zipName.replace(/\.zip$/i, '') : '.');
-				displayRoot(ul, tree, rootLabel, files, zipName);
+				displayRoot(ul, tree, rootLabel, pathMap);
 				applyColumns(ul, columns);
 
 				el.parentElement.replaceChild(container, el);
