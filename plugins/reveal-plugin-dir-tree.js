@@ -11,8 +11,8 @@ Attributes on <pre class="dirtree">:
   data-width="auto"               — container width, e.g. "400px", "60%", "auto" (default: auto)
   data-columns="auto"             — wrap a dense tree into multiple columns when it
 									gets too tall for the slide (default: "auto").
-									"auto" picks the count from the number of entries
-									(>12 → 2, >24 → 3); "2"/"3"/… forces a fixed
+									"auto" picks the count from the number of lines
+									(>14 → 2, >40 → 3); "2"/"3"/… forces a fixed
 									count; "1" (or "none") keeps a single column.
 
 <pre class="dirtree" data-zipname="k8s-Exercise.zip" data-width="480px">
@@ -21,6 +21,9 @@ code/k8s-demo-app/02-k8s-mariadb-service.yaml
 code/k8s-demo-app/Dockerfile
 code/k8s-demo-app/package.json
 </pre>
+
+  Single file, inline (compact chip with always-visible view/copy buttons):
+  <a data-dirtree data-strip-prefix="code/" href="code/gridflex/load-test.sh"></a>
 */
 
 const dirTreeFactory = ({ zip, strToU8 }) => ({
@@ -75,10 +78,6 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				ul.dirtree,
 				li.dirtree {
 					line-height: inherit !important;
-				}
-
-				ul.dirtree ul.dirtree {
-					padding-left: 0 !important;
 				}
 
 				li.dirtree {
@@ -185,6 +184,86 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					background: #f6f8fa;
 					border-color: #8c959f;
 					color: #1f2328;
+				}
+
+				/* Compact inline rendering for a single-file dirtree: no box, no
+				   root folder, no tree connectors — just the file with its
+				   view/copy buttons revealed on hover. */
+				.dirtree-inline {
+					font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+					display: inline-flex;
+					align-items: center;
+					/* Anchor for the absolutely-positioned actions popover. */
+					position: relative;
+					/* Whole chip is tappable to toggle the popover on touch. */
+					cursor: pointer;
+					/* Sit on the text line like inline code. */
+					vertical-align: middle;
+					/* No frame: the file reads as inline text; actions float in a popover. */
+					padding: 0;
+					background: transparent;
+					font-size: 0.9em;
+					line-height: 1.3;
+					text-align: left;
+					/* Cancel the slide theme's list hanging indent (-0.88em), which would
+					   otherwise slide the file name under the icon. */
+					text-indent: 0;
+					white-space: nowrap;
+				}
+
+				/* Shrink the file icon so it matches the reduced inline font. */
+				.dirtree-inline .dirtree-icon {
+					margin-right: 4px;
+				}
+
+				/* Actions live in a small popover above the chip (tooltip-style) so
+				   revealing them never reflows the slide. */
+				.dirtree-inline-actions {
+					position: absolute;
+					left: 0;
+					bottom: 100%;
+					margin-bottom: 6px;
+					display: flex;
+					align-items: center;
+					gap: 6px;
+					padding: 4px 6px;
+					background: #ffffff;
+					border: 1px solid #d0d7de;
+					border-radius: 6px;
+					box-shadow: 0 2px 10px rgba(27, 31, 36, 0.25);
+					white-space: nowrap;
+					z-index: 20;
+					opacity: 0;
+					visibility: hidden;
+					transition: opacity 0.12s ease;
+				}
+
+				/* Transparent bridge over the gap so the cursor can move from the chip
+				   up into the popover without dismissing it. */
+				.dirtree-inline-actions::after {
+					content: '';
+					position: absolute;
+					left: 0;
+					right: 0;
+					top: 100%;
+					height: 8px;
+				}
+
+				.dirtree-inline:hover .dirtree-inline-actions,
+				.dirtree-inline:focus-within .dirtree-inline-actions,
+				.dirtree-inline.open .dirtree-inline-actions {
+					opacity: 1;
+					visibility: visible;
+				}
+
+				/* Buttons are gated by the popover's visibility; reset their inline
+				   hover/opacity defaults so they are solid inside the popover. */
+				.dirtree-inline-actions .dirtree-preview-btn,
+				.dirtree-inline-actions .dirtree-copy-btn {
+					display: inline-flex;
+					opacity: 1 !important;
+					pointer-events: auto !important;
+					margin-left: 0;
 				}
 
 				/* Preview modal */
@@ -439,12 +518,22 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				}
 
 				/* Multi-column layout for dense trees (opt-in via data-columns).
-				   column-count is set inline so the number can be dynamic. The
-				   whole tree flows through the columns and may break anywhere, so
-				   every column starts at the top of the box — see applyColumns. */
-				ul.dirtree.dirtree-columns {
-					column-gap: 1.6em;
-					column-rule: 1px solid #e1e4e8;
+				   The columns are separate lists in a flex row, filled in JS —
+				   NOT a CSS multi-column context. Browsers disagree on how a tree
+				   whose lines are flex containers fragments across CSS columns:
+				   Safari kept the column height of the unfragmented tree, so the
+				   box stayed roughly twice as tall as the content and left a large
+				   empty area below it. Explicit columns shrink-wrap identically
+				   everywhere. */
+				.dirtree-cols {
+					display: flex;
+					align-items: flex-start;
+					gap: 1.6em;
+				}
+
+				.dirtree-cols > ul.dirtree + ul.dirtree {
+					border-left: 1px solid #e1e4e8;
+					padding-left: 1.6em !important;
 				}
 
 				/* Several non-wrapping columns side by side can grow wider than the
@@ -460,6 +549,14 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				}
 			`;
 			document.head.appendChild(style);
+
+			// Close any click-opened popover when tapping/clicking outside it
+			// (touch has no hover to fall back on). Registered once with the styles.
+			document.addEventListener('click', e => {
+				document.querySelectorAll('.dirtree-inline.open').forEach(el => {
+					if (!el.contains(e.target)) el.classList.remove('open');
+				});
+			});
 		}
 
 		// Octicons (GitHub, MIT licensed), inlined so the plugin stays
@@ -749,6 +846,59 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			return btn;
 		}
 
+		// Copy the file's URL (not its contents) to the clipboard. Needed for
+		// the inline chip, where clicking the name opens/downloads the file.
+		function makeCopyLinkButton(url) {
+			const btn = document.createElement('button');
+			btn.classList.add('dirtree-copy-btn');
+			btn.title = 'Copy link to file';
+			btn.textContent = 'link';
+			btn.addEventListener('click', e => {
+				e.preventDefault();
+				writeToClipboard(url)
+					.then(() => {
+						btn.textContent = '✓ copied';
+						btn.classList.add('copied');
+						setTimeout(() => { btn.textContent = 'link'; btn.classList.remove('copied'); }, 1500);
+					})
+					.catch(() => {
+						btn.textContent = '✗ error';
+						setTimeout(() => { btn.textContent = 'link'; }, 1500);
+					});
+			});
+			return btn;
+		}
+		
+		// Fill the given container with the compact inline single-file rendering:
+		// file icon + link and always-visible view/copy buttons. Shared by a
+		// one-entry <pre class="dirtree"> and by <a data-dirtree>.
+		function renderInlineFile(container, realPath, fileName) {
+			const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+			container.classList.add('dirtree-inline');
+			container.appendChild(makeIcon(ICON_FILE, false));
+			const a = document.createElement('a');
+			a.classList.add('dirtree-file-link');
+			a.href = realPath;
+			a.textContent = fileName;
+			container.appendChild(a);
+			const actions = document.createElement('span');
+			actions.classList.add('dirtree-inline-actions');
+			actions.appendChild(makePreviewButton(realPath, fileName, ext));
+			actions.appendChild(makeCopyButton(realPath));
+			actions.appendChild(makeCopyLinkButton(a.href));
+			container.appendChild(actions);
+
+			// Tap/click toggles the popover so it also works without hover (touch);
+			// clicks on the action buttons pass through. Cancel the file link's
+			// navigation so tapping the name never downloads — the popover's
+			// view/link buttons cover opening and sharing.
+			container.addEventListener('click', e => {
+				if (e.target.closest('.dirtree-inline-actions')) return;
+				e.preventDefault();
+				container.classList.toggle('open');
+			});
+		}
+
 		function getFileList(el) {
 			return el.innerText.split('\n').filter(e => e.trim().length > 0);
 		}
@@ -813,8 +963,11 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 		}
 
 		// path is the displayed path (prefix already stripped); pathMap translates
-		// it back to the real path used for links, previews and copying.
-		function displayTree(el, treeNode, path, pathMap, ancestorLast) {
+		// it back to the real path used for links, previews and copying. Every
+		// entry is pushed onto `out` as ONE line: the indentation is drawn as text
+		// (contPrefix + connector), so nesting the lists adds nothing visually —
+		// and a flat list is what lets the lines be dealt into columns.
+		function collectLines(out, treeNode, path, pathMap, ancestorLast) {
 			const names = Object.getOwnPropertyNames(treeNode);
 
 			names.forEach((name, index) => {
@@ -842,12 +995,9 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 					li.appendChild(icon);
 					li.appendChild(nameSpan);
-					el.appendChild(li);
+					out.push(li);
 
-					const ul = document.createElement('ul');
-					ul.classList.add('dirtree');
-					li.appendChild(ul);
-					displayTree(ul, o, `${path}/${name}`, pathMap, [...ancestorLast, isLast]);
+					collectLines(out, o, `${path}/${name}`, pathMap, [...ancestorLast, isLast]);
 
 				} else {
 					const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
@@ -865,16 +1015,17 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					li.appendChild(a);
 					li.appendChild(makePreviewButton(finalPath, o, ext));
 					li.appendChild(makeCopyButton(finalPath));
-					el.appendChild(li);
+					out.push(li);
 				}
 			});
 		}
 
-		// Render the decorative root folder, then its contents. When every file
-		// shares a single top-level directory, that directory becomes the root
-		// (and stays in the file paths). Otherwise we show a label-only root
-		// (data-root, else the zip name, else ".") that is NOT part of any path.
-		function displayRoot(el, tree, rootLabel, pathMap) {
+		// Render the decorative root folder, then its contents, into a flat array
+		// of lines. When every file shares a single top-level directory, that
+		// directory becomes the root (and stays in the file paths). Otherwise we
+		// show a label-only root (data-root, else the zip name, else ".") that is
+		// NOT part of any path.
+		function buildLines(tree, rootLabel, pathMap) {
 			const topNames = Object.getOwnPropertyNames(tree);
 			const singleRootDir = topNames.length === 1 && typeof tree[topNames[0]] === 'object';
 			const rootName = singleRootDir ? topNames[0] : rootLabel;
@@ -892,45 +1043,49 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 			li.appendChild(icon);
 			li.appendChild(nameSpan);
-			el.appendChild(li);
 
-			const ul = document.createElement('ul');
-			ul.classList.add('dirtree');
-			li.appendChild(ul);
-			displayTree(ul, childTree, childPath, pathMap, []);
+			const lines = [li];
+			collectLines(lines, childTree, childPath, pathMap, []);
+			return lines;
 		}
 
-		// Spread a dense tree over several columns. The multi-column context goes
-		// on the OUTERMOST ul and subtrees are allowed to break across it, so both
-		// columns fill from the top of the box. Columnising the deepest branch
-		// instead (and keeping its subtrees whole) sounds tidier, but a column box
-		// cannot start above its own element: with the branch sitting several
-		// levels down the root chain, every column but the first began halfway
-		// down the container and left the top corner empty. A subtree split across
-		// the boundary stays readable because each line carries its full ASCII
-		// prefix as text.
-		function applyColumns(rootUl, columns) {
-			if (!columns || columns === '1' || columns === 'none') return;
-
+		// Put the lines into the container, dealt over several columns when the
+		// tree is dense. Each column is its own list, filled top to bottom in
+		// document order, so the box is exactly as tall as the longest column. A
+		// subtree split across a column boundary stays readable because each line
+		// carries its full ASCII prefix as text.
+		function layoutLines(container, lines, columns) {
 			// "auto" scales with the total number of rendered lines (the tree's
 			// height), not the entries of any single directory — a tree can be
 			// tall while every individual folder stays small.
 			let n;
-			if (columns === 'auto') {
-				const total = rootUl.querySelectorAll('li.dirtree').length;
-				n = total > 40 ? 3 : total > 14 ? 2 : 1;
-			} else {
-				n = parseInt(columns, 10);
-			}
-			if (!Number.isFinite(n) || n < 2) return;
+			if (!columns || columns === '1' || columns === 'none') n = 1;
+			else if (columns === 'auto') n = lines.length > 40 ? 3 : lines.length > 14 ? 2 : 1;
+			else n = parseInt(columns, 10);
+			if (!Number.isFinite(n) || n < 1) n = 1;
 
-			rootUl.classList.add('dirtree-columns');
-			rootUl.style.columnCount = String(n);
+			const makeColumn = items => {
+				const ul = document.createElement('ul');
+				ul.classList.add('dirtree');
+				items.forEach(li => ul.appendChild(li));
+				return ul;
+			};
+
+			if (n < 2) {
+				container.appendChild(makeColumn(lines));
+				return;
+			}
+
+			const perColumn = Math.ceil(lines.length / n);
+			const cols = document.createElement('div');
+			cols.classList.add('dirtree-cols');
+			for (let i = 0; i < lines.length; i += perColumn)
+				cols.appendChild(makeColumn(lines.slice(i, i + perColumn)));
+			container.appendChild(cols);
 
 			// Mark the container so the multi-column sizing rules apply (smaller
 			// font + tighter padding to keep the wider layout on the slide).
-			const container = rootUl.closest('.dirtree-container');
-			if (container) container.classList.add('dirtree-multicol');
+			container.classList.add('dirtree-multicol');
 		}
 
 		deck.on('ready', () => {
@@ -950,10 +1105,18 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 				const tree = createTree(displayFiles);
 
 				const container = document.createElement('div');
-				container.classList.add('dirtree-container');
 
 				// Forward font-size (and other inline styles) from the <pre>
 				if (el.getAttribute('style')) container.setAttribute('style', el.getAttribute('style'));
+
+				// A single file renders as a compact inline chip.
+				if (files.length === 1) {
+					renderInlineFile(container, files[0], displayFiles[0].split('/').pop());
+					el.parentElement.replaceChild(container, el);
+					continue;
+				}
+
+				container.classList.add('dirtree-container');
 				// Re-apply data-driven styles on top (inline style from <pre> must not override these)
 				if (width !== 'auto') container.style.width = width;
 
@@ -970,14 +1133,24 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					container.classList.add('no-download');
 				}
 
-				const ul = document.createElement('ul');
-				ul.classList.add('dirtree');
-				container.appendChild(ul);
-
 				const rootLabel = el.getAttribute('data-root') || (zipName ? zipName.replace(/\.zip$/i, '') : '.');
-				displayRoot(ul, tree, rootLabel, pathMap);
-				applyColumns(ul, columns);
+				layoutLines(container, buildLines(tree, rootLabel, pathMap), columns);
 
+				el.parentElement.replaceChild(container, el);
+			}
+
+			// A single file can also be authored as an anchor: the href is the
+			// file, rendered as the same compact inline chip.
+			for (const el of deck.getRevealElement().querySelectorAll('a[data-dirtree]')) {
+				const realPath = el.getAttribute('href');
+				if (!realPath) continue;
+				const stripPrefix = normalizePrefix(el.getAttribute('data-strip-prefix'));
+				const stripped = realPath.startsWith(stripPrefix) ? realPath.slice(stripPrefix.length) : realPath;
+				const fileName = stripped.split('/').pop();
+
+				const container = document.createElement('span');
+				if (el.getAttribute('style')) container.setAttribute('style', el.getAttribute('style'));
+				renderInlineFile(container, realPath, fileName);
 				el.parentElement.replaceChild(container, el);
 			}
 		});
