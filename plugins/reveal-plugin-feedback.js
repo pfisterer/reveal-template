@@ -362,6 +362,13 @@ export default () => ({
 				#fb-bp-mini .fb-mini-stats .m { margin-left: 0; }
 				#fb-bp-mini .fb-mini-view { overflow: hidden; }
 				#fb-bp-mini .fb-mini-scale { transform-origin: top left; }
+				#fb-bp-mini .fb-mini-comments { border-top: 1px solid #eee; padding: 5px 8px;
+					font: 11px Arial, Helvetica, sans-serif; color: #444; max-height: 30vh; overflow: auto; }
+				#fb-bp-mini .fb-mini-c { padding: 3px 0; border-bottom: 1px dashed #eee; }
+				#fb-bp-mini .fb-mini-c:last-child { border-bottom: 0; }
+				#fb-bp-mini .fb-mini-ct { display: block; }
+				#fb-bp-mini .fb-mini-cm { color: #999; font-size: 10px; }
+				#fb-bp-mini .fb-mini-more { color: #999; font-size: 10px; padding-top: 3px; }
 				#fb-bp-mini .reveal { position: static; width: 100%; height: 100%; font-size: initial; }
 				#fb-bp-mini .reveal .slides { position: static !important; width: 100% !important;
 					height: 100% !important; left: auto !important; top: auto !important;
@@ -864,10 +871,22 @@ export default () => ({
 					+ `</div>`
 			}
 
+			// Neueste Kommentare unter dem Preview (Server liefert neueste zuerst).
+			let commentsHtml = ''
+			if (st && st.comments && st.comments.length) {
+				const cs = st.comments.slice(0, 4)
+				commentsHtml = `<div class="fb-mini-comments">`
+					+ cs.map(c => `<div class="fb-mini-c"><span class="fb-mini-ct">${esc(c.value)}</span>`
+						+ `<span class="fb-mini-cm">${esc((c.created_at || '').slice(5, 16).replace('T', ' '))}</span></div>`).join('')
+					+ (st.comments.length > cs.length ? `<div class="fb-mini-more">+${st.comments.length - cs.length} more</div>` : '')
+					+ `</div>`
+			}
+
 			miniEl.innerHTML = statsHtml
 				+ `<div class="fb-mini-view" style="width:${miniW}px;height:${miniH}px">`
 				+ `<div class="fb-mini-scale" style="transform:scale(${scale});width:${SW}px;height:${SH}px">`
 				+ `<div class="reveal"><div class="slides"></div></div></div></div>`
+				+ commentsHtml
 			miniEl.querySelector('.fb-mini-scale .slides').appendChild(clone)
 			miniEl.style.width = miniW + 'px'; miniEl.style.height = ''
 			miniEl.classList.add('open')
