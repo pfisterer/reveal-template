@@ -11,6 +11,7 @@ import DirTreePlugin from './plugins/reveal-plugin-dir-tree.js';
 import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
 import QuickNavPlugin from './plugins/reveal-plugin-quick-nav.js';
+import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
 
 // All third-party paths below are written as bare-package specifiers
 // (e.g. "reveal.js/dist/reveal.mjs"). At runtime they are resolved to
@@ -315,7 +316,8 @@ function buildDennisPlugins(deps) {
 		DirTreePlugin(deps.fflate),
 		PrefixUrlPlugin,
 		AsciinemaPlugin(deps.asciinemaPlayer.create),
-		QuickNavPlugin
+		QuickNavPlugin,
+		FeedbackPlugin
 	]
 }
 
