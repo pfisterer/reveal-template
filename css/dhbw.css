@@ -581,10 +581,11 @@ attribution {
   position: fixed !important;
   display: block !important;
   left: auto;
-  right: 84px;
+  right: 98px;
   /* leaves room on its right for the slide-number (right:8px) and the
-     feedback-plugin button in between (a fixed slot; the attribution grows
-     leftwards, so the slot stays clear at any attribution width). */
+     feedback-plugin button in between (a fixed slot at --fb-right:66px, ~16px
+     wide; the attribution grows leftwards, so the slot stays clear at any
+     attribution width). */
   bottom: var(--dhbw-strip-bottom) !important;
   height: var(--dhbw-strip-height) !important;
   line-height: var(--dhbw-strip-height) !important;
@@ -819,4 +820,89 @@ ul.dirtree ul ul ul li {
 
 .reveal .flow-around ul {
   display: block;
+}
+/* ---------------------------------------------------------------------- */
+/* Keyboard-shortcut help overlay ("?"): reveal renders one very tall     */
+/* single column that overflows. Reflow the KEY/ACTION table into two     */
+/* readable columns.                                                      */
+/* ---------------------------------------------------------------------- */
+.r-overlay-help .r-overlay-help-content {
+  max-width: min(1120px, 94vw) !important;
+  width: min(1120px, 94vw) !important;
+  margin: 0 auto;
+}
+.r-overlay-help-content table {
+  display: block;
+  width: 100%;
+}
+.r-overlay-help-content table tbody {
+  display: block;
+  column-count: 2;
+  column-gap: 48px;
+}
+.r-overlay-help-content table tr {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  break-inside: avoid;
+  padding: 4px 0;
+}
+/* redundant "KEY | ACTION" header row (columns are self-explanatory) */
+.r-overlay-help-content table tr:first-child {
+  display: none;
+}
+.r-overlay-help-content table td:first-child {
+  flex: 0 0 46%;
+  text-align: right;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+.r-overlay-help-content table td:last-child {
+  flex: 1 1 54%;
+  text-align: left;
+}
+
+/* DHBW colour scheme for the help overlay (light theme, DHBW red/grey)      */
+/* instead of reveal's default dark boxed look. Force ALL nested containers   */
+/* light and drop reveal's zebra rows.                                        */
+.r-overlay.r-overlay-help,
+.r-overlay-help .r-overlay-viewport,
+.r-overlay-help .r-overlay-content,
+.r-overlay-help .r-overlay-help-content {
+  background: #ffffff !important;
+  color: #4e565c !important;
+}
+.r-overlay-help .r-overlay-header,
+.r-overlay-help .r-overlay-header *,
+.r-overlay-help .r-overlay-close {
+  color: #4e565c !important;
+}
+.r-overlay-help .r-overlay-close:hover {
+  color: #e2001a !important;
+}
+.r-overlay-help-content h1,
+.r-overlay-help-content h2,
+.r-overlay-help-content h3 {
+  color: #e2001a !important;
+}
+.r-overlay-help-content table tr,
+.r-overlay-help-content table tr:nth-child(even),
+.r-overlay-help-content table td {
+  background: transparent !important;
+  border: none !important;
+}
+.r-overlay-help-content table tr {
+  border-bottom: 1px solid #ececec !important;
+}
+.r-overlay-help-content table td {
+  color: #4e565c !important;
+  opacity: 1 !important;
+}
+.r-overlay-help-content table td:first-child {
+  color: #333 !important;
+  font-family: monospace;
+  background: #f2f3f4 !important;
+  border-radius: 5px;
+  padding: 2px 8px !important;
+  flex: 0 0 44%;
 }
