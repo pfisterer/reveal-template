@@ -4,10 +4,12 @@ Create a zip from existing files for download and display a tree of files
 Attributes on <pre class="dirtree">:
   data-zipname="archive.zip"      — name of the downloaded zip; omit to hide the download button
   data-root="my-project"          — label for the root folder when files have no common top-level dir
-									(default: zip name without ".zip", else ".")
+									(default: "/" when data-strip-prefix is set, else the zip name
+									without ".zip", else ".")
   data-strip-prefix="code/"       — hide this leading path segment in the displayed tree (and in the
 									zip entry names); links and downloads still use the full path.
 									Paths that do not start with the prefix are shown unchanged.
+									With a prefix stripped, the tree root defaults to "/".
   data-width="auto"               — container width, e.g. "400px", "60%", "auto" (default: auto)
   data-columns="auto"             — wrap a dense tree into multiple columns when it
 									gets too tall for the slide (default: "auto").
@@ -650,10 +652,12 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 		let modalRefs = null;
 
 		// View preferences persist across previews within a session.
-		// FONT_FIT_MAX caps the automatic enlarge-to-fit for small files so a
-		// two-line file does not blow up to an absurd size; manual A+ can still
-		// climb to FONT_MAX.
-		const FONT_MIN = 11, FONT_MAX = 32, FONT_FIT_MAX = 28, FONT_STEP = 2;
+		// FONT_FIT_MAX caps the automatic enlarge-to-fit so a one-liner does not
+		// blow up to an absurd size — but it is set generously so genuinely short
+		// files DO get large. The fit never overflows: the scale is also bounded by
+		// the content width/height (see fitFontToContent), so it only reaches this
+		// cap when the content is truly tiny. Manual A+ can still climb to FONT_MAX.
+		const FONT_MIN = 11, FONT_MAX = 56, FONT_FIT_MAX = 44, FONT_STEP = 2;
 		const FONT_BASE = 16;
 		let previewFontPx = FONT_BASE;
 		let previewTheme = 'light';   // 'light' | 'dark'
@@ -700,10 +704,17 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			// A−/A+ buttons continue from the fitted size.
 			function fitFontToContent() {
 				code.style.fontSize = FONT_BASE + 'px';
-				// scrollWidth/Height force a layout read of the content's natural size
-				// (white-space:pre means width is the longest line).
+				// `code` is display:block, so it fills the body width — scrollWidth
+				// would then report the CONTAINER width, not how narrow short content
+				// really is, and the width ratio would always be ~1 (so short files
+				// never grew). Let it shrink-wrap to its natural content box for the
+				// read (inline-block + white-space:pre => width of the longest line),
+				// then restore. scrollWidth/Height force the layout read.
+				const prevDisplay = code.style.display;
+				code.style.display = 'inline-block';
 				const contentW = code.scrollWidth;
 				const contentH = code.scrollHeight;
+				code.style.display = prevDisplay;
 				if (!contentW || !contentH) { applyView(); return; }
 				// Available space: body width is the modal's fixed width; for height
 				// the modal grows with content, so derive the ceiling from the
@@ -1133,7 +1144,12 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 					container.classList.add('no-download');
 				}
 
-				const rootLabel = el.getAttribute('data-root') || (zipName ? zipName.replace(/\.zip$/i, '') : '.');
+				// Root-Label (nur relevant, wenn es keinen gemeinsamen Top-Level-Ordner
+				// gibt). Bei gestripptem Prefix liegen die Einträge bereits auf oberster
+				// Ebene -> "/" als Wurzel statt des (irrefuehrenden) Zip-Namens. Sonst
+				// Zip-Name ohne ".zip", sonst ".". data-root ueberschreibt immer.
+				const rootLabel = el.getAttribute('data-root')
+					|| (stripPrefix ? '/' : (zipName ? zipName.replace(/\.zip$/i, '') : '.'));
 				layoutLines(container, buildLines(tree, rootLabel, pathMap), columns);
 
 				el.parentElement.replaceChild(container, el);

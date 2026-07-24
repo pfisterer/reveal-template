@@ -79,6 +79,12 @@ export async function mountDashboard(container, opts) {
 
     const theme = { primaryColor: 'red', fontFamily: 'Arial, Helvetica, sans-serif' }
 
+    // Das Dashboard-Overlay (#fb-dashboard) liegt bei z-index 330; Mantine
+    // portalt Dropdowns nach document.body mit Default-z-index 300 -- sie
+    // lägen also HINTER dem Overlay und wären unsichtbar. Darüber heben.
+    const OVERLAY_Z = 400
+    const comboboxProps = { zIndex: OVERLAY_Z }
+
     async function apiGet(params) {
         const qs = new URLSearchParams(params).toString()
         const res = await fetch(`${API}?${qs}`, { credentials: 'include' })
@@ -103,6 +109,44 @@ export async function mountDashboard(container, opts) {
         return res.json()
     }
 
+    // Feedback loeschen (nur Admin). body = {ids:[...]} ODER {scope:{...}}.
+    async function apiDelete(body) {
+        const res = await fetch(`${API}?action=delete`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        })
+        if (res.status === 401) { window.location.reload(); throw new Error('auth') }
+        if (res.status === 403) throw new Error('forbidden')
+        if (!res.ok) throw new Error('http_' + res.status)
+        return res.json()
+    }
+
+    // Aktive Filter -> Loesch-Scope (nur nicht-leere Werte), damit "alles
+    // loeschen" pro Zeile genau den angezeigten (gefilterten) Umfang trifft.
+    const filterScope = f => {
+        const s = {}
+        if (f && f.course) s.course = f.course
+        if (f && f.group) s.group = f.group
+        if (f && f.from) s.from = f.from
+        if (f && f.to) s.to = f.to
+        return s
+    }
+
+    // Bestaetigen, loeschen, neu laden. Gibt true zurueck, wenn geloescht wurde.
+    async function runDelete(body, confirmMsg, reload) {
+        if (confirmMsg && !window.confirm(confirmMsg)) return false
+        try {
+            await apiDelete(body)
+            if (reload) await reload()
+            return true
+        } catch (e) {
+            window.alert('Löschen fehlgeschlagen: ' + (e && e.message ? e.message : e))
+            return false
+        }
+    }
+
     function StatCard({ label, value, color }) {
         return html`
             <${Card} withBorder padding="md" radius="md">
@@ -115,14 +159,22 @@ export async function mountDashboard(container, opts) {
     const ratingColor = avg => avg > 0.25 ? 'green' : avg < -0.25 ? 'red' : 'gray'
     const fmtAvg = a => (a > 0 ? '+' : '') + a.toFixed(2)
 
-    function RatingsTable({ ratings }) {
+    function RatingsTable({ ratings, filters, reload }) {
         if (!ratings.length) return html`<${Text} c="dimmed">Keine Bewertungen.<//>`
+        const delRow = r => {
+            const scope = { ...filterScope(filters), kind: 'rating', pollNull: true }
+            if (r.deck) scope.deck = r.deck
+            if (r.slide_id) scope.slide_id = r.slide_id; else scope.deckWide = true
+            const label = r.slide_id ? `Folie „${r.slide_id}“` : 'ganzes Deck'
+            runDelete({ scope }, `Alle ${r.n} Bewertungen für ${label} löschen?`, reload)
+        }
         return html`
             <${Table} striped highlightOnHover withTableBorder>
                 <${Table.Thead}><${Table.Tr}>
                     <${Table.Th}>Deck<//><${Table.Th}>Folie<//>
                     <${Table.Th} ta="right">n<//><${Table.Th} ta="right">Ø<//>
                     <${Table.Th} w={220}>Verteilung (−/0/+)<//>
+                    <${Table.Th} w={90} ta="right">Aktion<//>
                 <//><//>
                 <${Table.Tbody}>
                     ${ratings.map(r => {
@@ -142,14 +194,21 @@ export async function mountDashboard(container, opts) {
                                         <${Progress.Section} value=${100 * r.pos / sum} color="green"/>
                                     <//>
                                 <//>
+                                <${Table.Td} ta="right">
+                                    <${Button} size="compact-xs" variant="subtle" color="red"
+                                        onClick=${() => delRow(r)} title="Alle Bewertungen dieser Zeile löschen">✕ alle<//>
+                                <//>
                             <//>`
                     })}
                 <//>
             <//>`
     }
 
-    function Polls({ polls }) {
+    function Polls({ polls, filters, reload }) {
         if (!polls.length) return html`<${Text} c="dimmed">Keine Umfrage-Antworten.<//>`
+        const delPoll = p => runDelete(
+            { scope: { ...filterScope(filters), poll_id: p.poll_id, kind: 'poll' } },
+            `Alle ${p.total} Antworten der Umfrage „${p.question || p.poll_id}“ löschen?`, reload)
         return html`
             <${Stack}>
                 ${polls.map(p => html`
@@ -159,6 +218,8 @@ export async function mountDashboard(container, opts) {
                             <${Group} gap="xs">
                                 <${Badge} variant="light" color="gray">${p.poll_id}<//>
                                 <${Badge} variant="light">${p.total} Antworten<//>
+                                <${Button} size="compact-xs" variant="subtle" color="red"
+                                    onClick=${() => delPoll(p)}>✕ alle löschen<//>
                             <//>
                         <//>
                         <${Stack} gap="xs">
@@ -178,22 +239,48 @@ export async function mountDashboard(container, opts) {
             <//>`
     }
 
-    function CommentsTable({ comments }) {
+    function CommentsTable({ comments, reload }) {
+        const [sel, setSel] = useState(() => new Set())
+        // Auswahl zuruecksetzen, wenn sich die Datenmenge aendert (z.B. nach Filter/Reload).
+        useEffect(() => { setSel(new Set()) }, [comments])
         if (!comments.length) return html`<${Text} c="dimmed">Keine Kommentare.<//>`
+
+        const ids = comments.map(c => c.id).filter(Boolean)
+        const allSel = ids.length > 0 && ids.every(id => sel.has(id))
+        const toggle = id => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+        const toggleAll = () => setSel(allSel ? new Set() : new Set(ids))
+        const delIds = list => runDelete({ ids: list },
+            `${list.length} Kommentar${list.length === 1 ? '' : 'e'} löschen?`, reload)
+        const selIds = [...sel]
+
         return html`
-            <${Table} striped withTableBorder>
-                <${Table.Thead}><${Table.Tr}>
-                    <${Table.Th} w={150}>Zeit<//><${Table.Th}>Gruppe<//>
-                    <${Table.Th}>Deck / Folie<//><${Table.Th}>Kommentar<//>
-                <//><//>
-                <${Table.Tbody}>
-                    ${comments.map((c, i) => html`
-                        <${Table.Tr} key=${i}>
-                            <${Table.Td}><${Text} size="xs" c="dimmed">${c.created_at}<//><//>
-                            <${Table.Td}>${c.group_account}<//>
-                            <${Table.Td}>${c.deck || '—'}<br/>${c.slide_id ? html`<code>${c.slide_id}</code>` : html`<${Text} size="xs" c="dimmed">ganzes Deck<//>`}<//>
-                            <${Table.Td}>${c.value}<//>
-                        <//>`)}
+            <${Stack} gap="sm">
+                <${Group} justify="space-between">
+                    <${Text} size="sm" c="dimmed">${comments.length} Kommentar${comments.length === 1 ? '' : 'e'}${selIds.length ? ` · ${selIds.length} ausgewählt` : ''}<//>
+                    <${Button} size="compact-sm" color="red" variant="light" disabled=${!selIds.length}
+                        onClick=${() => delIds(selIds)}>Auswahl löschen (${selIds.length})<//>
+                <//>
+                <${Table} striped withTableBorder>
+                    <${Table.Thead}><${Table.Tr}>
+                        <${Table.Th} w={34}><input type="checkbox" checked=${allSel} onChange=${toggleAll} title="alle auswählen"/><//>
+                        <${Table.Th} w={150}>Zeit<//><${Table.Th}>Gruppe<//>
+                        <${Table.Th}>Deck / Folie<//><${Table.Th}>Kommentar<//>
+                        <${Table.Th} w={50}><//>
+                    <//><//>
+                    <${Table.Tbody}>
+                        ${comments.map((c, i) => html`
+                            <${Table.Tr} key=${c.id || i} bg=${sel.has(c.id) ? 'red.0' : undefined}>
+                                <${Table.Td}><input type="checkbox" checked=${sel.has(c.id)} onChange=${() => toggle(c.id)}/><//>
+                                <${Table.Td}><${Text} size="xs" c="dimmed">${c.created_at}<//><//>
+                                <${Table.Td}>${c.group_account}<//>
+                                <${Table.Td}>${c.deck || '—'}<br/>${c.slide_id ? html`<code>${c.slide_id}</code>` : html`<${Text} size="xs" c="dimmed">ganzes Deck<//>`}<//>
+                                <${Table.Td}>${c.value}<//>
+                                <${Table.Td} ta="right">
+                                    <${Button} size="compact-xs" variant="subtle" color="red"
+                                        onClick=${() => delIds([c.id])} title="Diesen Kommentar löschen">✕<//>
+                                <//>
+                            <//>`)}
+                    <//>
                 <//>
             <//>`
     }
@@ -263,13 +350,17 @@ export async function mountDashboard(container, opts) {
     }
 
     // Themen-Bewertungen der Kursumfrage (gerankt, schlechteste zuerst).
-    function TopicRatings({ topics }) {
+    function TopicRatings({ topics, filters, reload }) {
         if (!topics.length) return html`<${Text} c="dimmed">Keine Themen-Bewertungen.<//>`
+        const delTopic = r => runDelete(
+            { scope: { ...filterScope(filters), poll_id: r.poll_id, kind: 'rating' } },
+            `Alle ${r.n} Bewertungen für „${r.question || r.poll_id}“ löschen?`, reload)
         return html`
             <${Table} striped highlightOnHover withTableBorder>
                 <${Table.Thead}><${Table.Tr}>
                     <${Table.Th}>Thema<//><${Table.Th} ta="right">n<//><${Table.Th} ta="right">Ø<//>
                     <${Table.Th} w={220}>Verteilung (−/0/+)<//>
+                    <${Table.Th} w={90} ta="right">Aktion<//>
                 <//><//>
                 <${Table.Tbody}>
                     ${topics.map(r => {
@@ -286,6 +377,10 @@ export async function mountDashboard(container, opts) {
                                         <${Progress.Section} value=${100 * r.pos / sum} color="green"/>
                                     <//>
                                 <//>
+                                <${Table.Td} ta="right">
+                                    <${Button} size="compact-xs" variant="subtle" color="red"
+                                        onClick=${() => delTopic(r)} title="Alle Bewertungen dieses Themas löschen">✕ alle<//>
+                                <//>
                             <//>`
                     })}
                 <//>
@@ -293,24 +388,36 @@ export async function mountDashboard(container, opts) {
     }
 
     // Freitext-Antworten der Kursumfrage, je Frage gruppiert.
-    function SurveyTexts({ groups }) {
+    function SurveyTexts({ groups, reload }) {
         if (!groups.length) return html`<${Text} c="dimmed">Keine Freitext-Antworten.<//>`
+        const delIds = (list, msg) => runDelete({ ids: list }, msg, reload)
         return html`
             <${Stack}>
-                ${groups.map(g => html`
+                ${groups.map(g => {
+                    const gids = g.answers.map(a => a.id).filter(Boolean)
+                    return html`
                     <${Card} withBorder radius="md" key=${g.poll_id}>
                         <${Group} justify="space-between" mb="xs">
                             <${Text} fw={700}>${g.question || g.poll_id}<//>
-                            <${Badge} variant="light">${g.answers.length}<//>
+                            <${Group} gap="xs">
+                                <${Badge} variant="light">${g.answers.length}<//>
+                                <${Button} size="compact-xs" variant="subtle" color="red" disabled=${!gids.length}
+                                    onClick=${() => delIds(gids, `Alle ${gids.length} Freitext-Antworten zu „${g.question || g.poll_id}“ löschen?`)}>✕ alle löschen<//>
+                            <//>
                         <//>
                         <${Stack} gap="sm">
                             ${g.answers.map((a, i) => html`
-                                <div key=${i}>
-                                    <${Text} size="sm">${a.value}<//>
-                                    <${Text} size="xs" c="dimmed">${a.group_account} · ${a.created_at}<//>
-                                </div>`)}
+                                <${Group} key=${a.id || i} justify="space-between" align="flex-start" wrap="nowrap">
+                                    <div>
+                                        <${Text} size="sm">${a.value}<//>
+                                        <${Text} size="xs" c="dimmed">${a.group_account} · ${a.created_at}<//>
+                                    </div>
+                                    ${a.id ? html`<${Button} size="compact-xs" variant="subtle" color="red"
+                                        onClick=${() => delIds([a.id], 'Diese Antwort löschen?')} title="Löschen">✕<//>` : null}
+                                <//>`)}
                         <//>
-                    <//>`)}
+                    <//>`
+                })}
             <//>`
     }
 
@@ -553,15 +660,15 @@ export async function mountDashboard(container, opts) {
                         <${Tabs.Tab} value="courses">Kurse<//>
                         <${Tabs.Tab} value="chat">KI-Chat<//>
                     <//>
-                    <${Tabs.Panel} value="ratings" pt="md"><${RatingsTable} ratings=${data.ratings}/><//>
+                    <${Tabs.Panel} value="ratings" pt="md"><${RatingsTable} ratings=${data.ratings} filters=${filters} reload=${load}/><//>
                     <${Tabs.Panel} value="survey" pt="md">
                         <${Title} order=5 mb="xs">Themen-Bewertung<//>
-                        <${TopicRatings} topics=${data.topicRatings || []}/>
+                        <${TopicRatings} topics=${data.topicRatings || []} filters=${filters} reload=${load}/>
                         <${Title} order=5 mt="lg" mb="xs">Freitext<//>
-                        <${SurveyTexts} groups=${data.surveyTexts || []}/>
+                        <${SurveyTexts} groups=${data.surveyTexts || []} reload=${load}/>
                     <//>
-                    <${Tabs.Panel} value="polls" pt="md"><${Polls} polls=${data.polls}/><//>
-                    <${Tabs.Panel} value="comments" pt="md"><${CommentsTable} comments=${data.comments}/><//>
+                    <${Tabs.Panel} value="polls" pt="md"><${Polls} polls=${data.polls} filters=${filters} reload=${load}/><//>
+                    <${Tabs.Panel} value="comments" pt="md"><${CommentsTable} comments=${data.comments} reload=${load}/><//>
                     <${Tabs.Panel} value="time" pt="md"><${TimeGroupTable} timeseries=${data.timeseries}/><//>
                     <${Tabs.Panel} value="courses" pt="md">
                         <${Table} striped withTableBorder>
@@ -604,11 +711,14 @@ export async function mountDashboard(container, opts) {
 
                 <${Card} withBorder radius="md" mb="lg">
                     <${Group} align="flex-end" gap="sm">
-                        <${Select} label="Kurs" placeholder="alle" clearable searchable
+                        <${Select} label="Kurs" placeholder="alle" clearable searchable comboboxProps=${comboboxProps}
+                            nothingFoundMessage="keine Einträge"
                             data=${courseOptions} value=${filters.course} onChange=${v => setF('course', v)} w={220}/>
-                        <${Select} label="Deck" placeholder="alle" clearable searchable
+                        <${Select} label="Deck" placeholder="alle" clearable searchable comboboxProps=${comboboxProps}
+                            nothingFoundMessage="keine Einträge"
                             data=${deckOptions} value=${filters.deck} onChange=${v => setF('deck', v)} w={220}/>
-                        <${Select} label="Gruppe" placeholder="alle" clearable searchable
+                        <${Select} label="Gruppe" placeholder="alle" clearable searchable comboboxProps=${comboboxProps}
+                            nothingFoundMessage="keine Einträge"
                             data=${groupOptions} value=${filters.group} onChange=${v => setF('group', v)} w={180}/>
                         <${TextInput} label="von" type="date" value=${filters.from}
                             onChange=${e => setF('from', e.currentTarget.value)}/>

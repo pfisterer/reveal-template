@@ -329,6 +329,22 @@ export default () => ({
 				#fb-overlay .fb-o-c:last-child { border-bottom: 0; }
 				#fb-overlay .fb-o-cmeta { font-size: 10px; color: #999; }
 				#fb-overlay .fb-o-cwarn { color: #b06a00; }
+				#fb-overlay .fb-o-ctools { display: flex; justify-content: space-between; align-items: center;
+					font-size: 10px; margin-bottom: 5px; }
+				#fb-overlay .fb-o-selall { color: #888; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+				#fb-overlay .fb-o-selall input { margin: 0; cursor: pointer; }
+				#fb-overlay .fb-o-delsel { color: #c0142c; text-decoration: none; cursor: pointer; }
+				#fb-overlay .fb-o-delsel:hover { text-decoration: underline; }
+				#fb-overlay .fb-o-delsel.disabled { color: #ccc; pointer-events: none; }
+				#fb-overlay .fb-o-crow { display: flex; align-items: flex-start; gap: 6px; }
+				#fb-overlay .fb-o-crow > input[type=checkbox] { margin: 3px 0 0; cursor: pointer; flex: none; }
+				#fb-overlay .fb-o-ctext { flex: 1; min-width: 0; }
+				#fb-overlay .fb-o-cx { color: #c0142c; text-decoration: none; cursor: pointer; opacity: .5;
+					font-size: 12px; padding: 0 2px; flex: none; }
+				#fb-overlay .fb-o-cx:hover { opacity: 1; }
+				#fb-overlay .fb-o-actions { margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee; }
+				#fb-overlay .fb-o-delall { color: #c0142c; font-size: 11px; text-decoration: none; cursor: pointer; }
+				#fb-overlay .fb-o-delall:hover { text-decoration: underline; }
 				#fb-overlay .fb-o-empty { color: #888; }
 				#fb-overlay .fb-o-hint { font-size: 10px; color: #aaa; padding: 6px 12px; border-top: 1px solid #eee; }
 
@@ -776,6 +792,15 @@ export default () => ({
 			return fetch(u, { credentials: 'include', cache: 'no-store' })
 				.then(r => r.ok ? r.json() : null).catch(() => null)
 		}
+		// Loeschen (nur Admin). body = {ids:[...]} ODER {scope:{...}}.
+		function apiDelete(body) {
+			const u = apiUrl + (apiUrl.includes('?') ? '&' : '?') + 'action=delete'
+			return fetch(u, {
+				method: 'POST', credentials: 'include',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			}).then(r => r.ok ? r.json() : null).catch(() => null)
+		}
 		function checkAdmin() {
 			return apiGet('action=whoami').then(j => !!(j && j.is_admin))
 		}
@@ -967,15 +992,26 @@ export default () => ({
 				const cs = st.comments || []
 				if (cs.length) {
 					html += `<div class="fb-o-clist">`
+					// Werkzeugleiste: alle auswaehlen + Auswahl loeschen (mehrere).
+					html += `<div class="fb-o-ctools"><label class="fb-o-selall"><input type="checkbox" class="fb-o-selall-cb"> select all</label>`
+						+ `<a href="#" class="fb-o-delsel disabled" data-act="delsel">🗑 delete selected</a></div>`
 					for (const c of cs) {
 						const sim = c.hash ? simOf(c.hash) : null
 						const badge = sim == null ? '' : ` · <span class="fb-o-csim ${simCls(sim)}">${simPct(sim)} match</span>`
 						const eye = (c.hash && snaps.includes(c.hash)) ? ` · <a class="fb-o-eye" data-hash="${c.hash}" data-sim="${sim == null ? '' : simPct(sim)}">👁 snapshot</a>` : ''
-						html += `<div class="fb-o-c"><div>${esc(c.value)}</div>`
-							+ `<div class="fb-o-cmeta">${esc((c.created_at || '').slice(0, 16).replace('T', ' '))}${badge}${eye}</div></div>`
+						const sel = c.id ? `<input type="checkbox" class="fb-o-csel" data-id="${c.id}">` : ''
+						const cx = c.id ? `<a href="#" class="fb-o-cx" data-id="${c.id}" title="Delete this comment">✕</a>` : ''
+						html += `<div class="fb-o-c"><div class="fb-o-crow">${sel}<div class="fb-o-ctext">`
+							+ `<div>${esc(c.value)}</div>`
+							+ `<div class="fb-o-cmeta">${esc((c.created_at || '').slice(0, 16).replace('T', ' '))}${badge}${eye}</div>`
+							+ `</div>${cx}</div></div>`
 					}
 					html += `</div>`
 				}
+
+				// "Alles loeschen" fuer diese Folie / das Deck (Ratings + Kommentare).
+				html += `<div class="fb-o-actions"><a href="#" class="fb-o-delall" data-act="delall">`
+					+ `🗑 Delete all feedback for this ${deckMode ? 'deck' : 'slide'}</a></div>`
 			}
 			html += `</div><div class="fb-o-hint">Press “${ADMIN_KEY.toUpperCase()}” to cycle · Esc to close</div>`
 			overlayEl.innerHTML = html
@@ -984,6 +1020,51 @@ export default () => ({
 				e.preventDefault()
 				showSnapshot(a.getAttribute('data-hash'), deckMode ? '' : id, a.getAttribute('data-sim') || '')
 			}))
+
+			// --- Loesch-Interaktionen im Overlay -------------------------------
+			const selBoxes = () => [...overlayEl.querySelectorAll('.fb-o-csel')]
+			const delSelBtn = overlayEl.querySelector('.fb-o-delsel')
+			const selAllCb = overlayEl.querySelector('.fb-o-selall-cb')
+			function refreshSel() {
+				const n = selBoxes().filter(b => b.checked).length
+				if (delSelBtn) {
+					delSelBtn.classList.toggle('disabled', n === 0)
+					delSelBtn.textContent = n ? `🗑 delete selected (${n})` : '🗑 delete selected'
+				}
+				if (selAllCb) { const all = selBoxes(); selAllCb.checked = all.length > 0 && all.every(b => b.checked) }
+			}
+			// Nach dem Loeschen: Stats neu laden und Overlay neu rendern.
+			async function afterDelete(res) {
+				if (!res || !res.ok) { alert('Delete failed.'); return }
+				await loadSlideStats(); updateOverlay()
+			}
+			selBoxes().forEach(b => b.addEventListener('change', refreshSel))
+			if (selAllCb) selAllCb.addEventListener('change', () => {
+				selBoxes().forEach(b => { b.checked = selAllCb.checked }); refreshSel()
+			})
+			overlayEl.querySelectorAll('.fb-o-cx').forEach(a => a.addEventListener('click', async e => {
+				e.preventDefault()
+				const cid = Number(a.getAttribute('data-id'))
+				if (!cid || !confirm('Delete this comment?')) return
+				afterDelete(await apiDelete({ ids: [cid] }))
+			}))
+			if (delSelBtn) delSelBtn.addEventListener('click', async e => {
+				e.preventDefault()
+				const ids = selBoxes().filter(b => b.checked).map(b => Number(b.getAttribute('data-id')))
+				if (!ids.length || !confirm(`Delete ${ids.length} selected comment${ids.length === 1 ? '' : 's'}?`)) return
+				afterDelete(await apiDelete({ ids }))
+			})
+			const delAllBtn = overlayEl.querySelector('.fb-o-delall')
+			if (delAllBtn) delAllBtn.addEventListener('click', async e => {
+				e.preventDefault()
+				const scope = deckMode
+					? { course, deck: deckName(), deckWide: true, pollNull: true }
+					: { course, deck: deckName(), slide_id: id, pollNull: true }
+				const what = deckMode ? 'the whole deck' : 'this slide'
+				if (!confirm(`Delete ALL feedback (ratings + comments) for ${what}? This cannot be undone.`)) return
+				afterDelete(await apiDelete({ scope }))
+			})
+			refreshSel()
 		}
 
 		// Quartile aus der diskreten Verteilung (dist: {"-3":n,...}).
