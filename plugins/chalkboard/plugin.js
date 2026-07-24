@@ -99,72 +99,78 @@ const initChalkboard = function ( Reveal ) {
 	var chalkEffect = 1.0;
 	var rememberColor = [ true, false ];
 	var eraser = {
-		src: path + 'img/sponge.png',
-		radius: 20
+		// radius (px) of the erased circle; matches the grey circle in the cursor
+		// SVG (r=13) so the cursor shows exactly what gets erased.
+		radius: 13
 	};
 	var boardmarkers = [ {
 			color: 'rgba(100,100,100,1)',
-			cursor: 'url(' + path + 'img/boardmarker-black.png), auto'
 		},
 		{
 			color: 'rgba(30,144,255, 1)',
-			cursor: 'url(' + path + 'img/boardmarker-blue.png), auto'
 		},
 		{
 			color: 'rgba(220,20,60,1)',
-			cursor: 'url(' + path + 'img/boardmarker-red.png), auto'
 		},
 		{
 			color: 'rgba(50,205,50,1)',
-			cursor: 'url(' + path + 'img/boardmarker-green.png), auto'
 		},
 		{
 			color: 'rgba(255,140,0,1)',
-			cursor: 'url(' + path + 'img/boardmarker-orange.png), auto'
 		},
 		{
 			color: 'rgba(150,0,20150,1)',
-			cursor: 'url(' + path + 'img/boardmarker-purple.png), auto'
 		},
 		{
 			color: 'rgba(255,220,0,1)',
-			cursor: 'url(' + path + 'img/boardmarker-yellow.png), auto'
 		}
 	];
 	var chalks = [ {
 			color: 'rgba(255,255,255,0.5)',
-			cursor: 'url(' + path + 'img/chalk-white.png), auto'
 		},
 		{
 			color: 'rgba(96, 154, 244, 0.5)',
-			cursor: 'url(' + path + 'img/chalk-blue.png), auto'
 		},
 		{
 			color: 'rgba(237, 20, 28, 0.5)',
-			cursor: 'url(' + path + 'img/chalk-red.png), auto'
 		},
 		{
 			color: 'rgba(20, 237, 28, 0.5)',
-			cursor: 'url(' + path + 'img/chalk-green.png), auto'
 		},
 		{
 			color: 'rgba(220, 133, 41, 0.5)',
-			cursor: 'url(' + path + 'img/chalk-orange.png), auto'
 		},
 		{
 			color: 'rgba(220,0,220,0.5)',
-			cursor: 'url(' + path + 'img/chalk-purple.png), auto'
 		},
 		{
 			color: 'rgba(255,220,0,0.5)',
-			cursor: 'url(' + path + 'img/chalk-yellow.png), auto'
 		}
 	];
 
-  var sponge = 		{
-		cursor: 'url(' + path + 'img/sponge.png), auto'
+  // LOCAL: erase cursor is a data-URI SVG (no img/sponge.png): the same eraser
+  // icon (Lucide "eraser", MIT) INSIDE a small grey circle that marks exactly the
+  // area that gets erased. The circle radius matches eraser.radius (px), and the
+  // hotspot is the circle centre (16,16) — so what the circle covers is erased.
+  // A dark halo behind the white icon keeps it visible on any background.
+  var eraserPaths = '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>';
+  var eraserCursorSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">'
+    + '<circle cx="16" cy="16" r="13" fill="rgba(200,200,200,0.22)" stroke="#bbb" stroke-width="1.5"/>'
+    + '<g transform="translate(8.5,8.5) scale(0.625)" fill="none" stroke-linecap="round" stroke-linejoin="round">'
+    + '<g stroke="#000" stroke-width="3.5" opacity=".5">' + eraserPaths + '</g>'
+    + '<g stroke="#fff" stroke-width="2">' + eraserPaths + '</g></g></svg>';
+  var sponge = {
+		cursor: 'url("data:image/svg+xml,' + encodeURIComponent( eraserCursorSvg ) + '") 16 16, auto'
 	}
 
+	// LOCAL: a background value may be a CSS colour (no image) or an image URL.
+	// Lets the board use a solid colour so no bitmap under img/ is needed.
+	function bgIsColor( v ) {
+		return /^(#|rgb|hsl|transparent\b|black\b|white\b|none\b)/i.test( String( v ).trim() );
+	}
+	function bgCss( v ) {
+		return bgIsColor( v ) ? v : 'url("' + v + '") repeat';
+	}
 
 	var keyBindings = {
 		toggleNotesCanvas: {
@@ -214,6 +220,10 @@ const initChalkboard = function ( Reveal ) {
 
 	var theme = 'chalkboard';
 	var color = [ 0, 0 ];
+	// LOCAL FEATURE (text tool): write text on the board instead of drawing.
+	var textMode = false;
+	var textSize = 36;                              // font size in slide coordinates
+	var textFont = 'Arial, Helvetica, sans-serif';
 	var toggleChalkboardButton = false;
 	var toggleNotesButton = false;
 	var colorButtons = true;
@@ -239,11 +249,13 @@ const initChalkboard = function ( Reveal ) {
 		if ( config.eraser ) eraser = config.eraser;
 		if ( config.boardmarkers ) boardmarkers = config.boardmarkers;
 		if ( config.chalks ) chalks = config.chalks;
+		if ( config.textSize ) textSize = config.textSize;   // LOCAL FEATURE (text tool)
+		if ( config.textFont ) textFont = config.textFont;
 
 		if ( config.theme ) theme = config.theme;
 		switch ( theme ) {
 		case 'whiteboard':
-			background = [ 'rgba(127,127,127,.1)', path + 'img/whiteboard.png' ];
+			background = [ 'rgba(127,127,127,.1)', '#efefef' ];   // LOCAL: solid colour, no image
 			draw = [ drawWithBoardmarker, drawWithBoardmarker ];
 			pens = [ boardmarkers, boardmarkers ];
 			grid = {
@@ -254,7 +266,7 @@ const initChalkboard = function ( Reveal ) {
 			break;
 		case 'chalkboard':
 		default:
-			background = [ 'rgba(127,127,127,.1)', path + 'img/blackboard.png' ];
+			background = [ 'rgba(127,127,127,.1)', '#000' ];   // LOCAL: solid black, no image
 			draw = [ drawWithBoardmarker, drawWithChalk ];
 			pens = [ boardmarkers, chalks ];
 			grid = {
@@ -278,7 +290,7 @@ const initChalkboard = function ( Reveal ) {
 
 		if ( drawingCanvas && ( config.theme || config.background || config.grid ) ) {
 			var canvas = document.getElementById( drawingCanvas[ 1 ].id );
-			canvas.style.background = 'url("' + background[ 1 ] + '") repeat';
+			canvas.style.background = bgCss( background[ 1 ] );
 			clearCanvas( 1 );
 			drawGrid();
 		}
@@ -346,10 +358,15 @@ const initChalkboard = function ( Reveal ) {
 	var playback = false;
 
   function changeCursor( element, tool ) {
-    element.style.cursor = tool.cursor;
+    // LOCAL PATCH: boardmarkers/chalks configured with a color but no `cursor`
+    // (as the deck's chalkboard config does) would set style.cursor to undefined
+    // here, which browsers ignore — so the sponge cursor set while erasing was
+    // never cleared and stayed after a right-click erase. Fall back to 'auto'.
+    var cur = ( tool && tool.cursor ) ? tool.cursor : 'auto';
+    element.style.cursor = cur;
     var palette = document.querySelector('.palette[data-mode="' + mode + '"]');
     if ( palette ) {
-      palette.style.cursor = tool.cursor;
+      palette.style.cursor = cur;
     }
   }
 
@@ -364,8 +381,10 @@ const initChalkboard = function ( Reveal ) {
 		for ( var i = 0; i < length; i++ ) {
 			var colorButton = document.createElement( 'li' );
 			colorButton.setAttribute( 'data-color', i );
-			colorButton.innerHTML = '<i class="fa fa-square"></i>';
-			colorButton.style.color = colors[ i ].color;
+			// LOCAL: CSS swatch instead of a FontAwesome square — exact size,
+			// perfectly centred, no icon-font dependency (uniform with the SVG icons).
+			colorButton.innerHTML = '<span class="chalkboard-swatch"></span>';
+			colorButton.firstChild.style.background = colors[ i ].color;
 			colorButton.addEventListener( 'click', function ( e ) {
 				var element = e.target;
 				while ( !element.hasAttribute( 'data-color' ) ) {
@@ -382,18 +401,16 @@ const initChalkboard = function ( Reveal ) {
 			} );
 			list.appendChild( colorButton );
 		}
-    // eraser
+    // eraser — LOCAL: inline SVG icon (Lucide "eraser", MIT) instead of the
+    // sponge PNG: crisp at any size, themeable via `stroke`, no image asset.
+    // (The erase drag cursor uses the same icon as a data-URI, see `sponge`.)
     var eraserButton = document.createElement( 'li' );
 		eraserButton.setAttribute( 'data-eraser', 'true' );
-		var spongeImg = document.createElement( 'img' );
-		spongeImg.src = eraser.src;
-    spongeImg.height = "24";
-    spongeImg.width = "24";
-    spongeImg.style.marginTop = '10px';
-    spongeImg.style.marginRight = '0';
-    spongeImg.style.marginBottom = '0';
-    spongeImg.style.marginLeft = '0';
-		eraserButton.appendChild(spongeImg);
+		eraserButton.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20"'
+			+ ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+			+ ' stroke-linejoin="round" style="vertical-align:middle;color:#fff">'
+			+ '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>'
+			+ '<path d="M22 21H7"/><path d="m5 11 9 9"/></svg>';
 		eraserButton.addEventListener( 'click', function ( e ) {
 			colorIndex( -1 );
 		} );
@@ -401,6 +418,14 @@ const initChalkboard = function ( Reveal ) {
 			colorIndex( -1 );
 		} );
 		list.appendChild( eraserButton );
+
+    // text tool (LOCAL FEATURE) — styling lives in style.css for uniformity.
+    var textButton = document.createElement( 'li' );
+    textButton.setAttribute( 'data-text', 'true' );
+    textButton.innerHTML = '<span class="chalkboard-text-icon">T</span>';
+    textButton.addEventListener( 'click', function () { selectText(); } );
+    textButton.addEventListener( 'touchstart', function ( e ) { e.preventDefault(); selectText(); } );
+    list.appendChild( textButton );
 
 		palette.appendChild( list );
 		return palette;
@@ -462,7 +487,7 @@ const initChalkboard = function ( Reveal ) {
 				container.appendChild( palette );
 			}
 		} else {
-			container.style.background = 'url("' + background[ id ] + '") repeat';
+			container.style.background = bgCss( background[ id ] );
 			container.style.zIndex = 26;
 			container.style.opacity = 0;
 			container.style.visibility = 'hidden';
@@ -756,20 +781,25 @@ const initChalkboard = function ( Reveal ) {
 		drawingCanvas[ 0 ].container.style.opacity = 0; // do not print notes canvas
 		drawingCanvas[ 0 ].container.style.visibility = 'hidden';
 
-		var patImg = new Image();
-		patImg.onload = function () {
+		// LOCAL: bake stored drawings into the slides for print. patImg is the board
+		// background pattern; with a solid-colour background there is no image, so
+		// bake with patImg=null (createDrawings then fills with the colour).
+		var bake = function ( patImg ) {
 			var slides = Reveal.getSlides();
-//console.log(slides);
 			for ( var i = storage[ 1 ].data.length - 1; i >= 0; i-- ) {
-				console.log( 'Create printout for slide ' + storage[ 1 ].data[ i ].slide.h + '.' + storage[ 1 ].data[ i ].slide.v );
 				var slideData = getSlideData( storage[ 1 ].data[ i ].slide, 1 );
 				var drawings = createDrawings( slideData, patImg );
 				addDrawings( slides[storage[ 1 ].data[ i ].page], drawings );
-
 			}
-//			Reveal.sync();
 		};
-		patImg.src = background[ 1 ];
+		if ( bgIsColor( background[ 1 ] ) ) {
+			bake( null );
+		} else {
+			var patImg = new Image();
+			patImg.onload = function () { bake( patImg ); };
+			patImg.onerror = function () { bake( null ); };
+			patImg.src = background[ 1 ];
+		}
 	}
 
 
@@ -835,7 +865,7 @@ const initChalkboard = function ( Reveal ) {
 		template.height = height;
 
 		var imgCtx = template.getContext( '2d' );
-		imgCtx.fillStyle = imgCtx.createPattern( patImg, 'repeat' );
+		imgCtx.fillStyle = patImg ? imgCtx.createPattern( patImg, 'repeat' ) : background[ 1 ];
 		imgCtx.rect( 0, 0, width, height );
 		imgCtx.fill();
 
@@ -858,6 +888,9 @@ const initChalkboard = function ( Reveal ) {
 				break;
 			case 'selectboard':
 				selectBoard( slideData.events[ j ].board );
+				break;
+			case 'text':   // LOCAL FEATURE (text tool)
+				drawTextEvent( getCanvas( template, drawings, board ).getContext( '2d' ), slideData.events[ j ], scale, xOffset, yOffset );
 				break;
 			case 'clear':
 				getCanvas( template, drawings, board ).getContext( '2d' ).clearRect( 0, 0, width, height );
@@ -940,12 +973,14 @@ const initChalkboard = function ( Reveal ) {
 	function eraseWithSponge( context, x, y ) {
 		context.save();
 		context.beginPath();
-		context.arc( x + eraser.radius, y + eraser.radius, eraser.radius, 0, 2 * Math.PI, false );
+		// LOCAL: erase a circle CENTRED on the pointer (was offset by +radius),
+		// so it lines up with the cursor's grey circle instead of erasing below it.
+		context.arc( x, y, eraser.radius, 0, 2 * Math.PI, false );
 		context.clip();
-		context.clearRect( x - 1, y - 1, eraser.radius * 2 + 2, eraser.radius * 2 + 2 );
+		context.clearRect( x - eraser.radius - 1, y - eraser.radius - 1, eraser.radius * 2 + 2, eraser.radius * 2 + 2 );
 		context.restore();
 		if ( mode == 1 && grid ) {
-			redrawGrid( x + eraser.radius, y + eraser.radius, eraser.radius );
+			redrawGrid( x, y, eraser.radius );
 		}
 	}
 
@@ -1068,6 +1103,8 @@ const initChalkboard = function ( Reveal ) {
   	// replaying events recorded with different color settings).
     if ( index >= pens[ mode ].length ) index = 0;
 
+	  textMode = false;   // LOCAL FEATURE: selecting a pen/eraser leaves text mode
+
 	  color[ mode ] = index;
 
     if ( color[ mode ] < 0 ) {
@@ -1077,6 +1114,78 @@ const initChalkboard = function ( Reveal ) {
     else {
       changeCursor( drawingCanvas[ mode ].canvas, pens[ mode ][ color[ mode ] ] );
     }
+	}
+
+	// ---- LOCAL FEATURE: text tool ------------------------------------------
+	// Activate text mode (write instead of draw). Ensures a real colour is
+	// selected (not the eraser) and shows a text cursor.
+	function selectText() {
+		if ( readOnly ) return;
+		if ( color[ mode ] < 0 ) setColor( 0, false );
+		textMode = true;
+		changeCursor( drawingCanvas[ mode ].canvas, { cursor: 'text' } );
+		var palette = document.querySelector( '.palette[data-mode="' + mode + '"]' );
+		if ( palette ) palette.style.cursor = 'text';
+	}
+
+	// Render one text event. Colour is stored as a ready-to-use CSS colour
+	// string, so this works regardless of the current pen/colour settings.
+	function drawTextEvent( ctx, event, scale, xOffset, yOffset ) {
+		ctx.save();
+		ctx.font = ( event.size * scale ) + 'px ' + textFont;
+		ctx.fillStyle = event.color;
+		ctx.textBaseline = 'top';
+		ctx.fillText( event.text, xOffset + event.x * scale, yOffset + event.y * scale );
+		ctx.restore();
+	}
+
+	// Place an <input> at the click position, let the user type, then render the
+	// text onto the active canvas and record it (so it survives resize/reload).
+	function placeTextInput( evt ) {
+		var scale = drawingCanvas[ mode ].scale;
+		var xOffset = drawingCanvas[ mode ].xOffset;
+		var yOffset = drawingCanvas[ mode ].yOffset;
+		var screenX = evt.pageX, screenY = evt.pageY;
+		var colorStr = pens[ mode ][ color[ mode ] ].color;
+		var fontPx = textSize * scale;
+
+		var input = document.createElement( 'input' );
+		input.type = 'text';
+		input.setAttribute( 'autocomplete', 'off' );
+		input.style.cssText = 'position:absolute;left:' + screenX + 'px;top:' + screenY + 'px;'
+			+ 'margin:0;padding:0;border:none;outline:none;background:transparent;'
+			+ 'color:' + colorStr + ';font:' + fontPx + 'px ' + textFont + ';'
+			+ 'line-height:1;z-index:1000;min-width:2em;';
+		document.body.appendChild( input );
+		setTimeout( function () { input.focus(); }, 0 );
+
+		var done = false;
+		function commit() {
+			if ( done ) return;
+			done = true;
+			var text = input.value;
+			if ( input.parentNode ) input.parentNode.removeChild( input );
+			if ( !text ) return;
+			var ev = {
+				type: 'text',
+				x: ( screenX - xOffset ) / scale,
+				y: ( screenY - yOffset ) / scale,
+				text: text,
+				size: textSize,
+				color: colorStr
+			};
+			recordEvent( ev );
+			drawTextEvent( drawingCanvas[ mode ].context, ev, scale, xOffset, yOffset );
+		}
+		function cancel() { done = true; if ( input.parentNode ) input.parentNode.removeChild( input ); }
+
+		// Keep keystrokes away from reveal's navigation while typing.
+		input.addEventListener( 'keydown', function ( e ) {
+			e.stopPropagation();
+			if ( e.key === 'Enter' ) { e.preventDefault(); commit(); }
+			else if ( e.key === 'Escape' ) { e.preventDefault(); cancel(); }
+		} );
+		input.addEventListener( 'blur', commit );
 	}
 
 	/**
@@ -1339,6 +1448,9 @@ const initChalkboard = function ( Reveal ) {
 		case 'erase':
 			eraseCircle( id, event, timestamp );
 			break;
+		case 'text':   // LOCAL FEATURE (text tool)
+			drawTextEvent( drawingCanvas[ id ].context, event, drawingCanvas[ id ].scale, drawingCanvas[ id ].xOffset, drawingCanvas[ id ].yOffset );
+			break;
 		}
 	};
 
@@ -1532,6 +1644,9 @@ const initChalkboard = function ( Reveal ) {
 
 				mouseX = evt.pageX;
 				mouseY = evt.pageY;
+
+				// LOCAL FEATURE: left-click in text mode places a text input.
+				if ( textMode && evt.button == 0 ) { placeTextInput( evt ); return; }
 
 				if ( color[ mode ]  < 0 || evt.button == 2 || evt.button == 1 ) {
           if ( color[ mode ]  >= 0 ) {

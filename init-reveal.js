@@ -41,21 +41,34 @@ const esmDeps = {
 	simplemenu: { path: 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js', isPlugin: true }
 }
 
-// Classic-script deps that publish themselves on `window` and have no ESM build.
-// These are awaited via the script `load` event so their globals are defined
-// before Reveal.initialize is called.
+// Classic-script deps from node_modules that publish themselves on `window` and
+// have no ESM build. These are awaited via the script `load` event so their
+// globals are defined before Reveal.initialize is called. Resolved under
+// node_modules via basePath (see toUrl). Currently none — chalkboard is vendored
+// (see packageJsLibs); customcontrols was dropped (unused, controls are hidden).
 const externalJsLibs = [
-	'reveal.js-plugins/customcontrols/plugin.js', // → window.RevealCustomControls
-	'reveal.js-plugins/chalkboard/plugin.js'      // → window.RevealChalkboard
+]
+
+// Package-owned classic scripts, vendored and co-located with init-reveal.js
+// (resolved via import.meta.url so it works in both local-dev and npm-install
+// layouts — same pattern as the theme CSS). chalkboard lives here (MIT license,
+// © Asvin Goel; see plugins/chalkboard/LICENSE) so the deck no longer depends on
+// the reveal.js-plugins npm package.
+const packageJsLibs = [
+	new URL('./plugins/chalkboard/plugin.js', import.meta.url).href  // → window.RevealChalkboard
 ]
 
 const extraStylesheets = [
 	{ href: 'reveal.js/dist/reveal.css' },
 	{ href: 'reveal.js/dist/plugin/highlight/zenburn.css' },
 	{ href: 'asciinema-player/dist/bundle/asciinema-player.css' },
-	{ href: 'reveal.js-plugins/customcontrols/style.css' },
-	{ href: 'reveal.js-plugins/chalkboard/style.css' },
 	{ href: '@fortawesome/fontawesome-free/css/all.min.css' }
+]
+
+// Package-owned stylesheets, vendored like packageJsLibs (absolute hrefs via
+// import.meta.url -> used as-is, not resolved under node_modules).
+const packageStylesheets = [
+	{ href: new URL('./plugins/chalkboard/style.css', import.meta.url).href }
 ]
 
 // Package-owned assets (theme + print CSS) live inside this package, NOT under
@@ -112,7 +125,8 @@ const defaultRevealOptions = {
 		chalkWidth: 3,
 		chalkEffect: 0.4,
 		theme: "chalkboard", // or "whiteboard"
-		grid: { color: 'rgb(50,50,10,0.5)', distance: 100, width: 3 },
+		// Ganz feines Gitter auf schwarzem Grund: dünne (1px), sehr dezente Linien.
+		grid: { color: 'rgba(255,255,255,0.06)', distance: 50, width: 1 },
 		boardmarkers: [
 			{ color: 'rgba(225, 2, 23, 1)' },
 			{ color: 'rgba(100,100,100,1)' },
@@ -247,9 +261,15 @@ async function loadEsmDeps(options) {
 // Inject classic <script> tags and await each one's load event so dependent
 // globals (window.RevealChalkboard, etc.) are defined before Reveal init.
 function addJsDependencies(options) {
-	return Promise.all(externalJsLibs.map(pkgPath => new Promise((resolve, reject) => {
+	// node_modules-based libs get resolved via basePath; package-owned libs are
+	// already absolute URLs (import.meta.url) and are used as-is.
+	const srcs = [
+		...externalJsLibs.map(pkgPath => toUrl(options.basePath, pkgPath)),
+		...packageJsLibs
+	]
+	return Promise.all(srcs.map(src => new Promise((resolve, reject) => {
 		const script = document.createElement('script')
-		script.src = toUrl(options.basePath, pkgPath)
+		script.src = src
 		script.onload = () => resolve()
 		script.onerror = () => reject(new Error(`Failed to load ${script.src}`))
 		document.head.appendChild(script)
@@ -268,6 +288,10 @@ function addCssDependencies(options) {
 
 	for (const css of extraStylesheets)
 		addCssElement(toUrl(options.basePath, css.href), css.id)
+
+	// Package-owned stylesheets use absolute import.meta.url hrefs -> used as-is.
+	for (const css of packageStylesheets)
+		addCssElement(css.href, css.id)
 
 	// Theme CSS hrefs are used as-is. Defaults are absolute URLs (resolved via
 	// import.meta.url so they work in both local-dev and npm-install layouts).
@@ -358,8 +382,7 @@ export function initReveal(opts) {
 				...buildDennisPlugins(deps),
 				...esmPlugins,
 				...finalOptions.plugins,
-				window.RevealChalkboard,
-				window.RevealCustomControls
+				window.RevealChalkboard
 			]
 
 			if (options.verbose)

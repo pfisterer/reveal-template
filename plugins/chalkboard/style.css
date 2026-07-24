@@ -32,13 +32,79 @@ div.boardhandle > ul {
   padding: 0;
 }
 
+/* Uniform, centred palette cells: every item is the same square box with its
+   content centred on both axes (colour squares, eraser SVG, text "T"). A fixed
+   size also keeps the palette usable — the theme's `.reveal ul li:before`
+   en-dash used to supply width by accident; we remove that dash below. */
+div.palette > ul,
+div.boardhandle > ul {
+  /* inline-block → the palette box shrinks tightly to the cells (dhbw.css also
+     sets inline-block but adds a left margin + text-align we must clear). */
+  display: inline-block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
 div.palette > ul > li,
 div.boardhandle > ul > li {
-  margin: 10px;
+  width: 30px;
+  height: 30px;
+  margin: 6px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Colour swatches: fixed rounded squares (a filled shape reads a touch heavier,
+   so 18px balances the 20px outline/letter). */
+div.palette [data-color] .chalkboard-swatch,
+div.boardhandle [data-color] .chalkboard-swatch {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+div.palette [data-eraser] svg,
+div.boardhandle [data-eraser] svg {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+}
+div.palette [data-text] .chalkboard-text-icon,
+div.boardhandle [data-text] .chalkboard-text-icon {
+  display: block;
+  width: 100%;            /* fill the cell so text-align can centre the glyph */
+  text-align: center;
+  font: bold 20px/1 Arial, Helvetica, sans-serif;
+  color: #fff;
+  text-indent: 0;         /* clear any inherited text-indent from the deck theme */
+}
+
+/* Deck themes may prepend a list bullet via `.reveal ul li:before` (dhbw.css
+   uses an en-dash "– "). The palette is a <ul><li> inside .reveal, so it would
+   inherit that stray dash — most visible before the text-tool "T". Neutralise
+   it (and any ::after) so the palette stays uniform regardless of theme. */
+div.palette > ul > li::before,
+div.palette > ul > li::after,
+div.boardhandle > ul > li::before,
+div.boardhandle > ul > li::after {
+  content: none !important;
 }
 
 @media print {
-	div.palette, div.boardhandle { 
-		display: none!important; 
+	div.palette, div.boardhandle {
+		display: none!important;
 	}
 }
+
+/* Deck customization (LOCAL): pure black chalkboard instead of the
+   blackboard.png texture. The container (#chalkboard) carries the board
+   background; the fine grid is drawn on the canvas on top via the `grid`
+   config in init-reveal.js. !important beats the inline background the plugin
+   sets. #notescanvas (annotations over slides) stays transparent. */
+#chalkboard { background: #000 !important; }
