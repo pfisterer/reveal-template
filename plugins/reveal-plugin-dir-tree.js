@@ -651,6 +651,13 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 		// (display:none) rather than removing it from the DOM.
 		let modalRefs = null;
 
+		// Reveal's keyboard config may be an OBJECT of custom bindings (e.g. the
+		// deck binds "a" -> agenda via `keyboard: { 65: … }`). While the preview is
+		// open we disable keyboard nav, but on close we must restore the EXACT prior
+		// value — not a blanket `true`, which would replace that object and silently
+		// drop every custom binding. Captured on open, restored on close.
+		let savedKeyboard = true;
+
 		// View preferences persist across previews within a session.
 		// FONT_FIT_MAX caps the automatic enlarge-to-fit so a one-liner does not
 		// blow up to an absurd size — but it is set generously so genuinely short
@@ -777,8 +784,9 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 
 			function close() {
 				overlay.style.display = 'none';
-				// Re-enable reveal's keyboard navigation that we paused while open.
-				deck.configure({ keyboard: true });
+				// Restore the exact keyboard config we paused (see savedKeyboard) —
+				// using `true` here would wipe the deck's custom key bindings.
+				deck.configure({ keyboard: savedKeyboard });
 			}
 
 			// Close on backdrop click, but not when clicking inside the modal.
@@ -822,6 +830,9 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 			body.scrollTop = 0;
 
 			// Pause reveal navigation so arrow keys scroll the code, not the slides.
+			// Remember the current keyboard config first so close() can restore it
+			// verbatim (it may be an object of custom bindings, not just `true`).
+			savedKeyboard = deck.getConfig().keyboard;
 			deck.configure({ keyboard: false });
 			overlay.style.display = 'flex';
 
