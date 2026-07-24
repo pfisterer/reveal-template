@@ -17,7 +17,9 @@ const dir_tree = {
 			for (let el of deck.getRevealElement().querySelectorAll("[data-prefix-url]")) {
 				const convertToInlineCode = el.getAttribute('data-convert-to-inline-code')
 				const attribute = el.getAttribute('data-prefix-url')
-				const urlPath = window.location.href.split('?')[0]
+				// Directory the deck page lives in (flat layout: /talks/cloud/<slug>
+				// -> /talks/cloud/), so prefixed paths like code/... resolve correctly.
+				const urlPath = new URL('.', window.location.origin + window.location.pathname).href
 				const prefix = attribute || urlPath
 
 				if (convertToInlineCode) {

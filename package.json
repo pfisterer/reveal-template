@@ -1,15 +1,16 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "1.1.51",
+  "version": "2.0.0",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
-  "main": "index.js",
+  "main": "init-reveal.js",
   "private": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "dennis_generate_toc": "scripts/generate_toc.js",
+    "dennis_build": "scripts/build.js",
+    "dennis_serve_dist": "scripts/serve_dist.js",
     "dennis_generate_pdfs": "scripts/generate_pdfs.js"
   },
   "author": "Dennis Pfisterer, http://dennis-pfisterer.de",
@@ -26,11 +27,15 @@
     "reveal.js": "^6.0.1",
     "reveal.js-mermaid-plugin": "^11.15.0",
     "reveal.js-simplemenu": "^2.0.3",
-    "serve-static": "^2.2.1"
+    "serve-static": "^2.2.1",
+    "vite": "^7.3.1"
   },
   "overrides": {
     "dompurify": "^3.4.12",
     "uuid": "^11.1.1",
     "@babel/runtime": "^7.26.10"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
   }
 }

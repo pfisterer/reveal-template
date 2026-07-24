@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>{{TITLE}}</title>
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, minimal-ui">
+
+	<script type="application/json" id="farberg-deck-config">{{DECK_CONFIG_JSON}}</script>
+	<script type="module" src="./deck.js"></script>
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section data-markdown data-separator="^---" data-separator-vertical="^vvv" data-charset="utf-8">
+				<script type="text/template">{{MARKDOWN}}</script>
+			</section>
+		</div>
+	</div>
+</body>
+
+</html>

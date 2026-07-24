@@ -1,13 +1,7 @@
 /*
-	Display a QR code in a destination element by extracting data out of `package.json` and can show the URL on the slides
-
-	package.json:
-
-	{
-		[...]
-		"homepage": "http://the.url/to/the/slides"
-		[...]
-	}
+	Display a QR code in a destination element using the lecture metadata that
+	dennis_build embeds into the page (farberg_reveal_template.info.homepage)
+	and can show the URL on the slides.
 
 	Example:
 		Show QR code: 
@@ -47,24 +41,11 @@ export default (QrCreator) => {
 		id: 'show_qr_code',
 		init: (deck) => {
 			deck.on('ready', () => {
-				let info_json_url = (deck.getConfig().farberg_reveal_template || {}).info_json || new URL('package.json', window.location)
-				if (info_json_url)
-					fetch(info_json_url.href, { "cache": "no-store", "credentials": "include" })
-						.then(res => {
-							if (res.status === 401) {
-								console.log("Authentication required, reloading page");
-								window.location.reload();
-								return;
-							}
-							return res.json();
-						})
-						.then(json => {
-							if (json) showLinkToSlidesAndQrCode(QrCreator, deck, json.homepage)
-						})
-						.catch(err => console.log("Error fetching info json", err))
+				const info = (deck.getConfig().farberg_reveal_template || {}).info
+				if (info && info.homepage)
+					showLinkToSlidesAndQrCode(QrCreator, deck, info.homepage)
 				else
-					console.log("show_qr_code: no URL available @ farberg_reveal_template.info_json")
-
+					console.log("show_qr_code: no homepage @ farberg_reveal_template.info")
 			})
 		}
 	}

@@ -1,16 +1,19 @@
 #!/usr/bin/env node
+
+// Local PDF generation (puppeteer-based alternative to the Gotenberg CI step).
+// Renders the print pages of a built dist/ into dist/pdfs/<slug>.pdf and
+// merges them into one combined PDF. Run `dennis_build` first.
+
 const connect = require('connect')
 const serveStatic = require('serve-static')
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
+const path = require('path')
+const fs = require('fs')
 const puppeteer = require('puppeteer')
 const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
 
 const cwd = process.cwd()
-const slides_dir = cwd
-const pdf_dir = path.join(cwd, '__pdfs__')
-const host = os.hostname()
+const dist_dir = path.join(cwd, 'dist')
+const pdf_dir = path.join(dist_dir, 'pdfs')
 const port = 1252
 const verbose = true
 const package_json = JSON.parse(fs.readFileSync('package.json'))
@@ -20,39 +23,37 @@ const url = args[0] ? args[0] : `http://localhost:${port}`
 
 function start_web_server() {
 	var app = connect();
-	app.use(serveStatic(slides_dir));
+	app.use(serveStatic(dist_dir, { extensions: ['html'] }));
 	app.use(function onerror(err, req, res, next) {
 		if (err)
 			console.error(err)
 	});
 	app.listen(port);
-	console.log(`Listening on port ${port}, running in ${cwd}`);
+	console.log(`Listening on port ${port}, serving ${dist_dir}`);
 	return app
 }
 
-function get_todos(md_dir, pdf_dir, url) {
-	//Get list of markdown files
-	let md_files = fs.readdirSync(md_dir)
-		// Keep markdown files
-		.filter(file => path.extname(file).toLowerCase() === ".md")
-		// Skip files starting with __
-		.filter(file => !path.basename(file, ".md").startsWith("__"))
-		// Skip README.md
-		.filter(file => path.basename(file, ".md") !== "README")
+function get_todos(url) {
+	const toc_file = path.join(dist_dir, 'toc.json')
+	if (!fs.existsSync(toc_file)) {
+		console.error('Error: dist/toc.json not found — run dennis_build first')
+		process.exit(1)
+	}
+	const toc = JSON.parse(fs.readFileSync(toc_file))
 
 	if (verbose)
-		console.log("Markdown files:", md_files)
+		console.log("Decks:", toc.decks.map(d => d.slug))
 
-	let todos = md_files.map(md_file => {
-		let pdf_name = path.basename(md_file, ".md") + ".pdf"
+	let todos = toc.decks.map(deck => {
+		let pdf_name = `${deck.slug}.pdf`
 		let pdf_file = path.join(pdf_dir, pdf_name)
 		let pdf_exists = fs.existsSync(pdf_file)
 		let pdf_size = pdf_exists ? fs.statSync(pdf_file)["size"] : 0;
-		let pdf_newer = pdf_size > 0 ? pdf_exists_and_is_newer_than_markdown(md_file, pdf_file, verbose) : 0
-		let presentation_url = `${url}/index.html?${encodeURIComponent(md_file)}/print-pdf#/`
+		let pdf_newer = pdf_size > 0 ? pdf_exists_and_is_newer_than_markdown(path.join(cwd, deck.file), pdf_file, verbose) : 0
+		let presentation_url = `${url}/${deck.printPath}.html#/`
 
 		let o = {
-			md_file,
+			md_file: deck.file,
 			pdf_dir,
 			pdf_name,
 			pdf_file,
@@ -98,18 +99,12 @@ function delete_stale_pdf_files(todos, pdf_dir, combined_pdf_name) {
 }
 
 async function convert_to_pdf_single(todo) {
-	async function waitForEvent(page, event, timeout = 2500) {
-		return Promise.race([
-			page.evaluate(
-				event => new Promise(resolve => document.addEventListener(event, resolve, { once: true })),
-				event
-			),
-			new Promise(r => setTimeout(r, timeout))
-		])
-	}
-
 	const browser = await puppeteer.launch({ headless: 'new' })
 	const page = await browser.newPage();
+
+	// Match Gotenberg's emulatedMediaType=screen — Reveal's print view is
+	// designed for screen media; with print emulation the PDF comes out blank.
+	await page.emulateMediaType('screen');
 
 	await page.goto(todo.presentation_url, { timeout: 10000, waitUntil: ['load', 'domcontentloaded'] });
 
@@ -170,8 +165,8 @@ async function main() {
 	//Create PDF dir
 	fs.mkdirSync(pdf_dir, { recursive: true })
 
-	//Get markdown files
-	const { todos, todos_that_require_action /*, todos_that_dont_require_action */ } = get_todos(slides_dir, pdf_dir, url);
+	//Get decks from dist/toc.json
+	const { todos, todos_that_require_action /*, todos_that_dont_require_action */ } = get_todos(url);
 
 	delete_stale_pdf_files(todos, pdf_dir, combined_pdf_name)
 

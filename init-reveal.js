@@ -13,87 +13,56 @@ import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
 import QuickNavPlugin from './plugins/reveal-plugin-quick-nav.js';
 import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
 
-// All third-party paths below are written as bare-package specifiers
-// (e.g. "reveal.js/dist/reveal.mjs"). At runtime they are resolved to
-// `${basePath}node_modules/${pkgPath}`. When migrating to a bundler
-// (Vite, etc.), these same strings can be used directly as import
-// specifiers — drop the toUrl() prefixing and they Just Work.
+// Stylesheets — bundled and minified by Vite into a single hashed CSS file;
+// font url()s inside them are hashed automatically. Specifiers must match the
+// packages' exports maps (reveal.js v6 exports './reveal.css'; zenburn.css is
+// not exported, so a vendored copy lives in css/).
+import 'reveal.js/reveal.css';
+import './css/zenburn.css';
+import 'asciinema-player/dist/bundle/asciinema-player.css';
+import 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+import './css/dhbw.css';
+import './plugins/chalkboard/style.css';
 
-const revealEsmModules = [
-	'reveal.js/dist/reveal.mjs', // must be first
-	'reveal.js/dist/plugin/markdown.mjs',
-	'reveal.js/dist/plugin/highlight.mjs',
-	'reveal.js/dist/plugin/search.mjs',
-	'reveal.js/dist/plugin/notes.mjs',
-	'reveal.js/dist/plugin/math.mjs',
-	'reveal.js/dist/plugin/zoom.mjs'
-]
+// Print stylesheet is attached only on print pages -> keep as a URL asset
+import printStylesheetUrl from './css/dhbw-print.css?url';
 
-// Third-party ESM deps loaded dynamically via import(). Awaited in parallel.
-// `isPlugin: true` means the module's default export is a Reveal plugin and
-// gets registered automatically; otherwise it's a library injected into a
-// Dennis-plugin factory (see buildDennisPlugins).
-const esmDeps = {
-	qrCreator: { path: 'qr-creator/dist/qr-creator.es6.min.js' },
-	fflate: { path: 'fflate/esm/browser.js' },
-	asciinemaPlayer: { path: 'asciinema-player/dist/index.js' },
-	revealMermaid: { path: 'reveal.js-mermaid-plugin/plugin/mermaid/mermaid.esm.js', isPlugin: true },
-	simplemenu: { path: 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js', isPlugin: true }
+// Chalkboard: vendored classic script (strict mode, publishes
+// window.RevealChalkboard as a side effect of this import).
+import './plugins/chalkboard/plugin.js';
+
+// Reveal core + bundled reveal plugins. Loaded via dynamic import() with
+// literal specifiers so Vite code-splits them into hashed chunks that load
+// in parallel.
+function loadRevealAndPlugins() {
+	return Promise.all([
+		import('reveal.js'), // must be first
+		import('reveal.js/plugin/markdown'),
+		import('reveal.js/plugin/highlight'),
+		import('reveal.js/plugin/search'),
+		import('reveal.js/plugin/notes'),
+		import('reveal.js/plugin/math'),
+		import('reveal.js/plugin/zoom')
+	])
 }
 
-// Classic-script deps from node_modules that publish themselves on `window` and
-// have no ESM build. These are awaited via the script `load` event so their
-// globals are defined before Reveal.initialize is called. Resolved under
-// node_modules via basePath (see toUrl). Currently none — chalkboard is vendored
-// (see packageJsLibs); customcontrols was dropped (unused, controls are hidden).
-const externalJsLibs = [
-]
-
-// Package-owned classic scripts, vendored and co-located with init-reveal.js
-// (resolved via import.meta.url so it works in both local-dev and npm-install
-// layouts — same pattern as the theme CSS). chalkboard lives here (MIT license,
-// © Asvin Goel; see plugins/chalkboard/LICENSE) so the deck no longer depends on
-// the reveal.js-plugins npm package.
-const packageJsLibs = [
-	new URL('./plugins/chalkboard/plugin.js', import.meta.url).href  // → window.RevealChalkboard
-]
-
-const extraStylesheets = [
-	{ href: 'reveal.js/dist/reveal.css' },
-	{ href: 'reveal.js/dist/plugin/highlight/zenburn.css' },
-	{ href: 'asciinema-player/dist/bundle/asciinema-player.css' },
-	{ href: '@fortawesome/fontawesome-free/css/all.min.css' }
-]
-
-// Package-owned stylesheets, vendored like packageJsLibs (absolute hrefs via
-// import.meta.url -> used as-is, not resolved under node_modules).
-const packageStylesheets = [
-	{ href: new URL('./plugins/chalkboard/style.css', import.meta.url).href }
-]
-
-// Package-owned assets (theme + print CSS) live inside this package, NOT under
-// node_modules. They're always co-located with init-reveal.js — in local dev
-// that's the repo root, in an npm install it's node_modules/@farberg/reveal-template/.
-// Resolving against import.meta.url handles both cases identically and is the
-// standard bundler-friendly pattern for package assets.
-const defaultThemeCss = [
-	{ href: new URL('./css/dhbw.css', import.meta.url).href, id: 'theme' }
-]
-
-const printStylesheet = new URL('./css/dhbw-print.css', import.meta.url).href
-
-const defaultOptions = {
-	revealOptions: {},
-	// Path prefix to the directory containing node_modules/, relative to the HTML.
-	// Examples: "" (HTML next to node_modules), "../" (HTML one level down).
-	basePath: "",
-	// Theme stylesheets. Defaults to this package's dhbw.css (resolved against
-	// import.meta.url so it works in both local-dev and npm-install layouts).
-	// Override with absolute or document-relative URLs to swap themes.
-	themeCss: defaultThemeCss,
-	slidesDestinationElement: document.querySelector("body div.reveal div.slides"),
-	indexDocument: "00 - Introduction.md",
-	verbose: false
+// Third-party ESM deps. `plugins` entries register with Reveal directly;
+// `deps` are libraries injected into the Dennis-plugin factories.
+async function loadEsmDeps(isPrint) {
+	const [qrCreator, fflate, asciinemaPlayer, revealMermaid, simplemenu] = await Promise.all([
+		import('qr-creator/dist/qr-creator.es6.min.js'),
+		import('fflate'),
+		import('asciinema-player'),
+		import('reveal.js-mermaid-plugin/plugin/mermaid/mermaid.esm.js'),
+		import('reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js')
+	])
+	return {
+		deps: { qrCreator, fflate, asciinemaPlayer },
+		// The menu bar is pointless in the PDF and simplemenu trips over the
+		// restructured DOM of Reveal's print view -> skip it there.
+		plugins: isPrint ? [revealMermaid.default] : [revealMermaid.default, simplemenu.default]
+	}
 }
 
 const defaultRevealOptions = {
@@ -138,6 +107,10 @@ const defaultRevealOptions = {
 	},
 	simplemenu: {
 		flat: true,
+		// CSS is bundled via the import above; without this, simplemenu tries to
+		// load simplemenu.css relative to its (hashed) script URL and its init
+		// promise never resolves on the resulting 404 -> Reveal never gets ready.
+		csspath: false,
 		barhtml: {
 			header: "",
 			footer: "<div class='menubar bottom'><ul class='menu'></ul></div>"
@@ -146,7 +119,7 @@ const defaultRevealOptions = {
 	keyboard: {
 		33: function () { Reveal.left(); }, // Don't go up using the presenter
 		34: function () { Reveal.right(); }, // Don't go down using the presenter
-		65  /* a */: function () { window.location.assign("./#/agenda") }, //Go to the agenda
+		65  /* a */: function () { window.location.hash = "#/agenda" }, //Go to the agenda
 	},
 	// Bounds for smallest/largest possible scale to apply to content
 	minScale: 0.1,
@@ -209,120 +182,33 @@ const defaultRevealOptions = {
 	plugins: []
 }
 
-// Resolve a bare-package path against the configured basePath, and
-// absolutize against document.baseURI so the result works identically
-// for DOM tag URLs (resolved vs document) and dynamic import()
-// (resolved vs the importing module URL).
-function toUrl(basePath, pkgPath) {
-	return new URL(`${basePath}node_modules/${pkgPath}`, document.baseURI).href
-}
-
-async function addPrintStylesheetIfUrlContainsPrintPdf(options) {
-	if (!window.location.search.match(/print-pdf/gi)) return
-
-	console.log("Print version requested")
-	const link = document.createElement('link')
-	link.rel = 'stylesheet'
-	link.type = 'text/css'
-	link.href = printStylesheet
-	document.head.appendChild(link)
-}
-
 // Resolve when window has finished loading
 function windowOnLoadPromise() {
+	if (document.readyState === 'complete') return Promise.resolve()
 	return new Promise(resolve => window.addEventListener('load', () => resolve()))
 }
 
-// Load reveal core + bundled plugins
-function loadRevealAndPlugins(options) {
-	if (options.verbose)
-		console.log("Importing reveal modules: ", revealEsmModules)
-
-	return Promise.all(revealEsmModules.map(p => import(toUrl(options.basePath, p))))
-}
-
-// Dynamically import each third-party ESM dep. Returns an object keyed by the
-// same names as `esmDeps`, mapped to the imported module namespace.
-// Dynamically import each esmDep in parallel. Returns:
-//   { deps: { [name]: module }, plugins: [defaultExports of isPlugin entries] }
-async function loadEsmDeps(options) {
-	const loaded = await Promise.all(
-		Object.entries(esmDeps).map(async ([key, meta]) => {
-			const mod = await import(toUrl(options.basePath, meta.path))
-			return { key, mod, meta }
-		})
-	)
-	return {
-		deps: Object.fromEntries(loaded.map(({ key, mod }) => [key, mod])),
-		plugins: loaded.filter(({ meta }) => meta.isPlugin).map(({ mod }) => mod.default)
+// Shallow-recursive merge for plain-object config overrides
+function deepMerge(base, override) {
+	const out = Object.assign({}, base)
+	for (const [key, value] of Object.entries(override || {})) {
+		out[key] = (value && value.constructor === Object && base[key] && base[key].constructor === Object)
+			? deepMerge(base[key], value)
+			: value
 	}
+	return out
 }
 
-// Inject classic <script> tags and await each one's load event so dependent
-// globals (window.RevealChalkboard, etc.) are defined before Reveal init.
-function addJsDependencies(options) {
-	// node_modules-based libs get resolved via basePath; package-owned libs are
-	// already absolute URLs (import.meta.url) and are used as-is.
-	const srcs = [
-		...externalJsLibs.map(pkgPath => toUrl(options.basePath, pkgPath)),
-		...packageJsLibs
-	]
-	return Promise.all(srcs.map(src => new Promise((resolve, reject) => {
-		const script = document.createElement('script')
-		script.src = src
-		script.onload = () => resolve()
-		script.onerror = () => reject(new Error(`Failed to load ${script.src}`))
-		document.head.appendChild(script)
-	})))
-}
-
-// Add <link rel="stylesheet"> tags for each CSS file
-function addCssDependencies(options) {
-	function addCssElement(href, id) {
-		const cssEl = document.createElement('link')
-		cssEl.rel = "stylesheet"
-		cssEl.href = href
-		if (id) cssEl.id = id
-		document.head.appendChild(cssEl)
-	}
-
-	for (const css of extraStylesheets)
-		addCssElement(toUrl(options.basePath, css.href), css.id)
-
-	// Package-owned stylesheets use absolute import.meta.url hrefs -> used as-is.
-	for (const css of packageStylesheets)
-		addCssElement(css.href, css.id)
-
-	// Theme CSS hrefs are used as-is. Defaults are absolute URLs (resolved via
-	// import.meta.url so they work in both local-dev and npm-install layouts).
-	// User overrides pass document-relative or absolute URLs directly.
-	for (const css of options.themeCss)
-		addCssElement(css.href, css.id)
-}
-
-function getDocumentToLoadOrRedirectToIndexDocument(options) {
-	const decoded = decodeURI(window.location.search);
-	const match = decoded.match(/\?([\w\s-]+.md)/);
-
-	//Url matches and contains a document to load
-	if (match && match[1]) {
-		const doc = match[1];
-		return doc;
-	}
-
-	// URL pattern does not match, redirect to index document
-	window.location.href = '?' + options.indexDocument + window.location.hash;
-}
-
-function addMarkdownSectionToPresentation(doc, options) {
-	// Create a section to load the markdown contents
-	const mdel = document.createElement("section");
-	mdel.setAttribute("data-markdown", doc)
-	mdel.setAttribute("data-separator", "^---")
-	mdel.setAttribute("data-separator-vertical", "^vvv")
-	mdel.setAttribute("data-charset", "utf-8")
-
-	options.slidesDestinationElement.appendChild(mdel)
+// Reload the page when the OIDC session has expired while the tab was in the
+// background ("reopened the tab next morning"). The initial page load itself
+// is a top-level navigation, so the auth proxy handles that via redirect.
+function installSessionProbe() {
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState !== 'visible') return
+		fetch('toc.json', { method: 'HEAD', cache: 'no-store', credentials: 'include' })
+			.then(res => { if (res.status === 401) window.location.reload() })
+			.catch(() => { })
+	})
 }
 
 // Build the Dennis-plugins array, injecting ESM deps into the factories that
@@ -345,55 +231,66 @@ function buildDennisPlugins(deps) {
 	]
 }
 
-export function initReveal(opts) {
-	// Generate options and include defaults (later sources' properties overwrite earlier ones)
-	const options = Object.assign({}, defaultOptions, opts)
+// Entry point for pages generated by dennis_build. Reads the per-deck config
+// (view, deck metadata, lecture info) embedded by the build step and merges it
+// with the lecture's deck.config.js export (`opts`).
+export function initRevealFromPage(opts = {}) {
+	const configEl = document.getElementById('farberg-deck-config')
+	const pageConfig = configEl ? JSON.parse(configEl.textContent) : {}
+	const isPrint = pageConfig.view === 'print' || /print-pdf/gi.test(window.location.search)
 
-	// Load dependencies and then initialize Reveal
-	Promise.all([
-		loadRevealAndPlugins(options),
-		loadEsmDeps(options),
-		addJsDependencies(options),
-		addCssDependencies(options),
-		addPrintStylesheetIfUrlContainsPrintPdf(options),
+	if (isPrint) {
+		const link = document.createElement('link')
+		link.rel = 'stylesheet'
+		link.href = printStylesheetUrl
+		document.head.appendChild(link)
+	}
+
+	return Promise.all([
+		loadRevealAndPlugins(),
+		loadEsmDeps(isPrint),
 		windowOnLoadPromise()
-	]).then(async values => {
-		const [revealModules, { deps, plugins: esmPlugins }] = values
-
+	]).then(([revealModules, { deps, plugins: esmPlugins }]) => {
 		// First entry from reveal modules is Reveal itself
 		const modules = revealModules.map(m => m.default)
 		const Reveal = modules.shift()
 
-		// Make it globally available
+		// Make it globally available (keyboard handlers etc. rely on it)
 		window.Reveal = Reveal
 
-		// Add markdown doc to presentation
-		const doc = getDocumentToLoadOrRedirectToIndexDocument(options)
+		const finalOptions = Object.assign({}, defaultRevealOptions, opts.revealOptions)
 
-		if (doc) {
-			addMarkdownSectionToPresentation(doc, options);
+		// Top-level `mermaid` in deck.config.js deep-merges into the defaults
+		if (opts.mermaid)
+			finalOptions.mermaid = deepMerge(defaultRevealOptions.mermaid, opts.mermaid)
 
-			//Initialize Reveal
-			const finalOptions = Object.assign(defaultRevealOptions, options.revealOptions);
+		if (isPrint)
+			finalOptions.view = 'print'
 
-			//Add plugins
-			finalOptions.plugins = [
-				...modules,
-				...buildDennisPlugins(deps),
-				...esmPlugins,
-				...finalOptions.plugins,
-				window.RevealChalkboard
-			]
+		// Deck/lecture metadata embedded at build time, consumed by show-title,
+		// show-qr-code and feedback (no runtime package.json fetch anymore).
+		finalOptions.farberg_reveal_template = Object.assign(
+			{},
+			finalOptions.farberg_reveal_template,
+			{ info: pageConfig.info, deck: pageConfig.deck }
+		)
 
-			if (options.verbose)
-				console.log("Invoking Reveal.initialize with options: ", finalOptions)
+		//Add plugins
+		finalOptions.plugins = [
+			...modules,
+			...buildDennisPlugins(deps),
+			...esmPlugins,
+			...(finalOptions.plugins || []),
+			window.RevealChalkboard
+		]
 
-			Reveal.initialize(finalOptions);
-		} else {
-			console.error("No document to load, aborting");
-		}
+		if (opts.verbose)
+			console.log("Invoking Reveal.initialize with options: ", finalOptions)
 
+		installSessionProbe()
+
+		return Reveal.initialize(finalOptions)
 	}).catch(error => {
-		console.error("Unable to load dependencies: ", error);
+		console.error("Unable to load dependencies: ", error)
 	})
 }

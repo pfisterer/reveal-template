@@ -31,8 +31,8 @@ export default () => ({
 	id: 'feedback',
 	init: (deck) => {
 
-		// Im PDF-Export nichts Interaktives einblenden (Gotenberg rendert print-pdf)
-		const isPrint = /print-pdf/.test(window.location.search)
+		// Im PDF-Export nichts Interaktives einblenden (Gotenberg rendert die Print-Seiten)
+		const isPrint = deck.getConfig().view === 'print' || /print-pdf/.test(window.location.search)
 
 		const rt = (deck.getConfig().farberg_reveal_template || {})
 		const cfg = rt.feedback || {}
@@ -42,29 +42,22 @@ export default () => ({
 			|| window.FEEDBACK_API
 			|| '/talks/reveal-feedback-server-side/api.php'
 
-		// --- Kurs-Identitaet: einmalig aus package.json (wie show-qr-code) -------
+		// --- Kurs-Identitaet: von dennis_build in die Seite eingebettet ----------
 		let course = window.location.origin + window.location.pathname
 		let courseTitle = document.title || ''
-		const infoUrl = rt.info_json || new URL('package.json', window.location)
 
 		function loadCourseInfo() {
-			return fetch(infoUrl.href, { cache: 'no-store', credentials: 'include' })
-				.then(res => {
-					if (res.status === 401) { window.location.reload(); return null }
-					return res.ok ? res.json() : null
-				})
-				.then(json => {
-					if (json) {
-						if (json.homepage) course = json.homepage
-						if (json.title) courseTitle = json.title
-					}
-				})
-				.catch(() => { /* Kurs bleibt auf Fallback */ })
+			if (rt.info) {
+				if (rt.info.homepage) course = rt.info.homepage
+				if (rt.info.title) courseTitle = rt.info.title
+			}
+			return Promise.resolve()
 		}
 
 		function deckName() {
-			const raw = decodeURIComponent(window.location.search.replace(/^\?/, ''))
-			return raw.split('/')[0] || 'index'
+			if (rt.deck && rt.deck.slug) return rt.deck.slug
+			const seg = window.location.pathname.split('/').filter(Boolean).pop() || 'index'
+			return decodeURIComponent(seg).replace(/\.html$/, '')
 		}
 
 		function slideId() {
