@@ -17,13 +17,18 @@ import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
 // font url()s inside them are hashed automatically. Specifiers must match the
 // packages' exports maps (reveal.js v6 exports './reveal.css'; zenburn.css is
 // not exported, so a vendored copy lives in css/).
+//
+// ORDER MATTERS and replicates the old runtime injection order: dhbw.css
+// before simplemenu.css — simplemenu used to inject its CSS last at runtime,
+// and its `.menubar > ul { display:flex }` must beat dhbw's generic
+// `.reveal ul { display:inline-block }` (equal specificity -> order decides).
 import 'reveal.js/reveal.css';
 import './css/zenburn.css';
 import 'asciinema-player/dist/bundle/asciinema-player.css';
-import 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import './css/dhbw.css';
 import './plugins/chalkboard/style.css';
+import './css/dhbw.css';
+import 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.css';
 
 // Print stylesheet is attached only on print pages -> keep as a URL asset
 import printStylesheetUrl from './css/dhbw-print.css?url';
@@ -35,10 +40,12 @@ import './plugins/chalkboard/plugin.js';
 // Reveal core + bundled reveal plugins. Loaded via dynamic import() with
 // literal specifiers so Vite code-splits them into hashed chunks that load
 // in parallel.
+// No markdown plugin anymore: dennis_build prerenders the markdown to
+// <section> HTML at build time (scripts/prerender.js runs the real reveal
+// markdown plugin in jsdom), so there is nothing left to parse at runtime.
 function loadRevealAndPlugins() {
 	return Promise.all([
 		import('reveal.js'), // must be first
-		import('reveal.js/plugin/markdown'),
 		import('reveal.js/plugin/highlight'),
 		import('reveal.js/plugin/search'),
 		import('reveal.js/plugin/notes'),
@@ -81,10 +88,9 @@ const defaultRevealOptions = {
 	transitionSpeed: 'default',
 	// Vertical centering of slides
 	center: false,
-	//Markdown config
-	markdown: {
-		smartypants: true,
-	},
+	// Markdown config lives build-side now (scripts/prerender.js, default
+	// { smartypants: true }); override via "farberg": { "markdown": ... } in
+	// the lecture repo's package.json.
 	// Disable automatic hljs; show-code-snippets calls hljs manually per element
 	highlight: {
 		highlightOnLoad: false
@@ -119,7 +125,13 @@ const defaultRevealOptions = {
 	keyboard: {
 		33: function () { Reveal.left(); }, // Don't go up using the presenter
 		34: function () { Reveal.right(); }, // Don't go down using the presenter
-		65  /* a */: function () { window.location.hash = "#/agenda" }, //Go to the agenda
+		// Go to the agenda: same-deck jump if this deck has an #agenda slide,
+		// otherwise navigate via the root redirect page (it preserves the hash
+		// and forwards to the first deck, where the agenda lives).
+		65  /* a */: function () {
+			if (document.getElementById("agenda")) window.location.hash = "#/agenda"
+			else window.location.assign("./#/agenda")
+		},
 	},
 	// Bounds for smallest/largest possible scale to apply to content
 	minScale: 0.1,

@@ -20,6 +20,7 @@
 const path = require('path')
 const fs = require('fs')
 const { slugify } = require('./slug')
+const { prerenderDeck } = require('./prerender')
 const { combined_pdf, pdf_exists_and_is_newer_than_markdown } = require('./helpers')
 
 const cwd = process.cwd()
@@ -30,7 +31,7 @@ const pdfDir = path.join(distDir, 'pdfs')
 const structuredNameRegexp = new RegExp('(\\S+)\\s-\\s(.*)')
 const subchapterRegexp = new RegExp('([0-9]+)([a-zA-Z]+)')
 
-const SCRIPT_END_SENTINEL = '__SCRIPT_END__'
+const SLIDES_PLACEHOLDER = '<!--DENNIS_SLIDES-->'
 
 function readPackageJson() {
 	return JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'))
@@ -88,22 +89,12 @@ function scanDecks() {
 	return decks
 }
 
-function escapeMarkdownForInlineTemplate(md, file) {
-	if (md.includes(SCRIPT_END_SENTINEL))
-		console.warn(`Warning: ${file} contains the literal ${SCRIPT_END_SENTINEL} sentinel; it will render as </script>.`)
-	const escaped = md.replace(/<\/script>/gi, SCRIPT_END_SENTINEL)
-	if (/<\/script/i.test(escaped))
-		console.warn(`Warning: ${file} contains an unterminated </script sequence that may break the inline template.`)
-	return escaped
-}
-
 // JSON safe for embedding in a <script> element
 function embeddableJson(obj) {
 	return JSON.stringify(obj).replace(/</g, '\\u003c')
 }
 
 function deckHtml(template, { deck, info, view }) {
-	const md = fs.readFileSync(path.join(cwd, deck.file), 'utf8')
 	const deckConfig = {
 		view,
 		deck: { slug: deck.slug, title: deck.title, number: deck.number, sub: deck.sub },
@@ -112,7 +103,41 @@ function deckHtml(template, { deck, info, view }) {
 	return template
 		.replace('{{TITLE}}', `${info.title || ''} - ${deck.title}`)
 		.replace('{{DECK_CONFIG_JSON}}', embeddableJson(deckConfig))
-		.replace('{{MARKDOWN}}', () => escapeMarkdownForInlineTemplate(md, deck.file))
+}
+
+// Prerender every deck's markdown once (shared by presentation + print page).
+// Returns Map(slug -> slidesHtml).
+async function prerenderDecks(decks, pkg) {
+	const markdownConfig = Object.assign({ smartypants: true }, (pkg.farberg || {}).markdown)
+	const slides = new Map()
+	for (const deck of decks) {
+		const md = fs.readFileSync(path.join(cwd, deck.file), 'utf8')
+		const { slidesHtml } = await prerenderDeck(md, { file: deck.file, markdownConfig })
+		slides.set(deck.slug, slidesHtml)
+	}
+	return slides
+}
+
+// Injects the prerendered slides AFTER Vite's asset scanning (order: 'post'),
+// both in build and dev — slide content (img/... refs) must never appear in
+// the Vite input pages or Vite would try to resolve/hash those assets.
+function injectSlidesPlugin(getState) {
+	return {
+		name: 'dennis-inject-slides',
+		transformIndexHtml: {
+			order: 'post',
+			handler(html, ctx) {
+				const { decks, slides } = getState()
+				const page = path.basename(ctx.filename || ctx.path || '', '.html')
+				const deck = decks.find(d => d.slug === page || d.printPath === page)
+				if (!deck) return html
+				const slidesHtml = slides.get(deck.slug)
+				if (!slidesHtml) return html
+				// function replacement: slide HTML may contain $-sequences
+				return html.replace(SLIDES_PLACEHOLDER, () => slidesHtml)
+			}
+		}
+	}
 }
 
 function redirectHtml(firstSlug) {
@@ -128,10 +153,13 @@ function redirectHtml(firstSlug) {
 `
 }
 
-// Generate the staging tree (.dennis-build/) that Vite builds from
-function generateStaging(decks, pkg) {
+// Generate the staging tree (.dennis-build/) that Vite builds from.
+// Prerenders all decks; the slides HTML is NOT written into the staging pages
+// (see injectSlidesPlugin) — the pages keep the placeholder comment.
+async function generateStaging(decks, pkg) {
 	const info = lectureInfo(pkg)
 	const template = fs.readFileSync(path.join(__dirname, 'deck-template.html'), 'utf8')
+	const slides = await prerenderDecks(decks, pkg)
 
 	fs.rmSync(stagingDir, { recursive: true, force: true })
 	fs.mkdirSync(stagingDir, { recursive: true })
@@ -156,7 +184,7 @@ function generateStaging(decks, pkg) {
 	// toc.json also goes into staging so the dev server can serve it
 	fs.writeFileSync(path.join(stagingDir, 'toc.json'), JSON.stringify(buildToc(decks, pkg), null, '\t'))
 
-	return decks
+	return { decks, slides }
 }
 
 function buildToc(decks, pkg) {
@@ -187,7 +215,7 @@ function writeTocJson(decks, pkg) {
 	fs.writeFileSync(path.join(distDir, 'toc.json'), JSON.stringify(buildToc(decks, pkg), null, '\t'))
 }
 
-async function viteBuild(decks) {
+async function viteBuild(decks, slides) {
 	const vite = await import('vite')
 	const input = { index: path.join(stagingDir, 'index.html') }
 	for (const d of decks) {
@@ -199,6 +227,7 @@ async function viteBuild(decks) {
 		base: './',
 		configFile: false,
 		logLevel: 'info',
+		plugins: [injectSlidesPlugin(() => ({ decks, slides }))],
 		build: {
 			outDir: distDir,
 			emptyOutDir: true,
@@ -206,6 +235,40 @@ async function viteBuild(decks) {
 			rollupOptions: { input }
 		}
 	})
+
+	// Backstop: a page that still carries the placeholder would ship empty
+	const leftover = fs.readdirSync(distDir)
+		.filter(f => f.endsWith('.html'))
+		.filter(f => fs.readFileSync(path.join(distDir, f), 'utf8').includes(SLIDES_PLACEHOLDER))
+	if (leftover.length > 0) {
+		console.error(`Error: slides placeholder not replaced in: ${leftover.join(', ')}`)
+		process.exit(1)
+	}
+}
+
+// Minify the final HTML pages. Conservative option set: <pre>/<textarea>
+// content is preserved by collapseWhitespace, the #farberg-deck-config JSON
+// is left untouched (no processScripts), attribute case is kept for inline
+// SVG. Comment directives were already consumed by the prerender, so
+// removeComments only drops inert author comments.
+async function minifyDistHtml() {
+	const { minify } = require('html-minifier-terser')
+	const options = {
+		collapseWhitespace: true,
+		// Never REMOVE whitespace, only collapse to a single space: plain
+		// collapseWhitespace drops whitespace-only text nodes even next to
+		// inline elements, visibly gluing words together ("-f <span>" -> "-f<span>").
+		conservativeCollapse: true,
+		removeComments: true,
+		caseSensitive: true,
+		keepClosingSlash: true,
+		minifyJS: true,
+		minifyCSS: true
+	}
+	for (const f of fs.readdirSync(distDir).filter(f => f.endsWith('.html'))) {
+		const file = path.join(distDir, f)
+		fs.writeFileSync(file, await minify(fs.readFileSync(file, 'utf8'), options))
+	}
 }
 
 // Copy img/, code/, data/ (and .htaccess) into dist/. preserveTimestamps is
@@ -240,8 +303,9 @@ async function fullBuild() {
 		process.exit(1)
 	}
 	console.log(`Building ${decks.length} decks -> ${distDir}`)
-	generateStaging(decks, pkg)
-	await viteBuild(decks)
+	const { slides } = await generateStaging(decks, pkg)
+	await viteBuild(decks, slides)
+	await minifyDistHtml()
 	copyStaticAssets(pkg)
 	writeTocJson(decks, pkg)
 	console.log('Build done.')
@@ -280,7 +344,7 @@ async function devServer() {
 	const serveStatic = require('serve-static')
 
 	const pkg = readPackageJson()
-	let decks = generateStaging(scanDecks(), pkg)
+	let { decks, slides } = await generateStaging(scanDecks(), pkg)
 	let routes = new Set(decks.flatMap(d => [d.slug, d.printPath]))
 	const { assetDirs } = assetConfig(pkg)
 
@@ -292,7 +356,7 @@ async function devServer() {
 		configFile: false,
 		appType: 'mpa',
 		server: { fs: { allow: [cwd, templateRealDir] } },
-		plugins: [{
+		plugins: [injectSlidesPlugin(() => ({ decks, slides })), {
 			name: 'dennis-lecture-dev',
 			configureServer(server) {
 				// Extensionless routes like prod: /02a-foo -> /02a-foo.html
@@ -317,14 +381,13 @@ async function devServer() {
 		const rel = path.relative(cwd, file)
 		if (rel.startsWith('.dennis-build') || rel.startsWith('dist') || rel.startsWith('node_modules')) return
 		if (!/\.md$|^deck\.config\.js$|^custom-code\.js$|^package\.json$/.test(rel)) return
-		try {
-			decks = generateStaging(scanDecks(), readPackageJson())
+		generateStaging(scanDecks(), readPackageJson()).then(result => {
+			decks = result.decks
+			slides = result.slides
 			routes = new Set(decks.flatMap(d => [d.slug, d.printPath]))
 			server.ws.send({ type: 'full-reload' })
 			console.log(`Regenerated after change in ${rel}`)
-		} catch (e) {
-			console.error(e)
-		}
+		}).catch(e => console.error(e))
 	})
 
 	await server.listen()

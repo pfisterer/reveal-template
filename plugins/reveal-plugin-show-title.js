@@ -67,10 +67,9 @@ export default () => {
 		// Run during init (NOT on 'ready'). This matters for print/PDF: Reveal
 		// computes the print layout (measuring each slide's scrollHeight to
 		// paginate) *after* all plugin init() calls but *before* the 'ready'
-		// event fires. The markdown plugin is registered ahead of us and its
-		// init() resolves first, so `.lecturetitle` already exists here.
-		// Injecting the title content now guarantees the slide has its final
-		// height before Reveal measures it.
+		// event fires. The slides are prerendered at build time, so
+		// `.lecturetitle` already exists here. Injecting the title content now
+		// guarantees the slide has its final height before Reveal measures it.
 		init: (deck) => {
 			const info = (deck.getConfig().farberg_reveal_template || {}).info
 			if (!info) {

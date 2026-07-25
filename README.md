@@ -6,7 +6,7 @@ It is primarily used by myself so it is quite opinionated and makes certains ass
 - Single level: `00 - Introduction.md`, `01 - Bla.md`, etc.
 - Two level: `00 - Introduction.md`, `01 - Topic 1.md`, `01a - Sub-Topic 1.md`, `01b - Sub-Topic 1.md`, `02 - Topic 2`, etc.
 
-`dennis_build` compiles the markdown files into a fully static `dist/` folder (Vite, minified/hashed assets, markdown inlined into one HTML page per deck). The result can be published on any web server and does not require server-side components.
+`dennis_build` compiles the markdown files into a fully static `dist/` folder (Vite, minified/hashed assets; the markdown is prerendered to reveal `<section>` HTML at build time — the real reveal markdown plugin runs in jsdom, so output is identical to former runtime parsing — and the pages are minified). The result can be published on any web server and does not require server-side components. Markdown parser options default to `{ smartypants: true }` and can be overridden via `"farberg": { "markdown": { ... } }` in the lecture's `package.json`.
 
 ## Requirements and Installation
 

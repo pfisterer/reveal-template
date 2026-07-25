@@ -60,8 +60,8 @@ export async function mountDashboard(container, opts) {
     const ApexCharts = apexMod.default || apexMod
     const {
         MantineProvider, Container, Title, Text, Group, Stack, SimpleGrid, Card,
-        Select, TextInput, Textarea, Button, Table, Progress, Badge, Tabs, Loader,
-        Alert, Center, Paper, ScrollArea,
+        Select, TextInput, Button, Table, Progress, Badge, Tabs, Loader,
+        Alert, Center,
     } = coreMod
 
     const html = htm.bind(h)
@@ -88,21 +88,6 @@ export async function mountDashboard(container, opts) {
     async function apiGet(params) {
         const qs = new URLSearchParams(params).toString()
         const res = await fetch(`${API}?${qs}`, { credentials: 'include' })
-        if (res.status === 401) { window.location.reload(); throw new Error('auth') }
-        if (res.status === 403) throw new Error('forbidden')
-        if (!res.ok) throw new Error('http_' + res.status)
-        return res.json()
-    }
-
-    // Chat-Proxy (POST api.php?action=llm). llm_unavailable/llm_error kommen als
-    // HTTP 200 mit ok:false zurueck -> die Komponente zeigt sie freundlich an.
-    async function apiChat(messages, temperature) {
-        const res = await fetch(`${API}?action=llm`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages, temperature }),
-        })
         if (res.status === 401) { window.location.reload(); throw new Error('auth') }
         if (res.status === 403) throw new Error('forbidden')
         if (!res.ok) throw new Error('http_' + res.status)
@@ -421,148 +406,6 @@ export async function mountDashboard(container, opts) {
             <//>`
     }
 
-    // System-Prompt (Deutsch): Antwort ausschliesslich auf Basis der aggregierten
-    // Feedback-Daten der Vorlesung.
-    const CHAT_SYSTEM = 'Du bist ein hilfreicher Assistent für die Auswertung von Lehrveranstaltungs-Feedback. '
-        + 'Antworte auf Deutsch, knapp, konkret und ausschließlich auf Basis der folgenden aggregierten '
-        + 'Feedback-Daten der Vorlesung. Reichen die Daten für eine Frage nicht aus, sage das ehrlich.'
-        + '\n\n=== Feedback-Daten (aktuelle Filter) ===\n'
-
-    // Baut aus dem bereits geladenen stats-Objekt einen kompakten Text-Kontext.
-    // Auf eine vernuenftige Zeichenzahl gekuerzt, damit phi-4-mini nicht ueberlaeuft.
-    function buildChatContext(data, filters) {
-        if (!data) return '(keine Daten geladen)'
-        const L = []
-        const f = []
-        if (filters.course) f.push('Kurs=' + filters.course)
-        if (filters.deck) f.push('Deck=' + filters.deck)
-        if (filters.group) f.push('Gruppe=' + filters.group)
-        if (filters.from) f.push('von=' + filters.from)
-        if (filters.to) f.push('bis=' + filters.to)
-        L.push('Aktive Filter: ' + (f.length ? f.join(', ') : 'keine'))
-        L.push('Feedback-Einträge gesamt: ' + data.total)
-
-        const slide = r => `${r.deck || '?'} / ${r.slide_id || 'ganzes Deck'}: Ø ${r.avg} (n=${r.n})`
-
-        if (data.overview && data.overview.length) {
-            L.push('', 'Kurse:')
-            data.overview.forEach(o => L.push(`- ${o.title || o.course}: ${o.total} Einträge, `
-                + `Ø ${o.rating_avg === null ? 'n/a' : o.rating_avg}, ${o.ratings} Bewertungen, `
-                + `${o.comments} Kommentare, ${o.polls} Umfrage-Antworten`))
-        }
-        const rt = data.ratings || []
-        if (rt.length) {
-            L.push('', 'Am schlechtesten bewertete Folien:')
-            rt.slice(0, 8).forEach(r => L.push('- ' + slide(r)))
-            L.push('Am besten bewertete Folien:')
-            rt.slice(-5).reverse().forEach(r => L.push('- ' + slide(r)))
-        }
-        const tr = data.topicRatings || []
-        if (tr.length) {
-            L.push('', 'Themen-Bewertungen der Umfrage (schlechteste zuerst):')
-            tr.slice(0, 10).forEach(r => L.push(`- ${r.question || r.poll_id}: Ø ${r.avg} (n=${r.n})`))
-        }
-        const st = data.surveyTexts || []
-        if (st.length) {
-            L.push('', 'Freitext-Antworten der Umfrage (Auszug):')
-            st.forEach(g => {
-                L.push(`Frage: ${g.question || g.poll_id}`)
-                g.answers.slice(0, 8).forEach(a => L.push('  • ' + a.value))
-            })
-        }
-        const cm = data.comments || []
-        if (cm.length) {
-            L.push('', 'Folien-Kommentare (Auszug):')
-            cm.slice(0, 15).forEach(c => L.push(`- [${c.deck || '?'}/${c.slide_id || '-'}] ${c.value}`))
-        }
-        let txt = L.join('\n')
-        const MAX = 12000
-        if (txt.length > MAX) txt = txt.slice(0, MAX) + '\n…(gekürzt)'
-        return txt
-    }
-
-    function ChatBubble({ role, content }) {
-        const mine = role === 'user'
-        return html`
-            <${Group} justify=${mine ? 'flex-end' : 'flex-start'}>
-                <${Paper} withBorder radius="md" p="sm" bg=${mine ? 'red.0' : 'gray.0'} maw="82%">
-                    <${Text} size="xs" c="dimmed" mb={2}>${mine ? 'Du' : 'KI'}<//>
-                    <${Text} size="sm" style=${{ whiteSpace: 'pre-wrap' }}>${content}<//>
-                <//>
-            <//>`
-    }
-
-    // KI-Chat auf Basis der aktuell gefilterten Kennzahlen. Haelt eigenen Verlauf;
-    // vor jeder Anfrage wird ein frischer System-Kontext (aktuelle Filter) gestellt.
-    function ChatPanel({ data, filters }) {
-        const [messages, setMessages] = useState([])
-        const [input, setInput] = useState('')
-        const [loading, setLoading] = useState(false)
-        const [error, setError] = useState(null)
-        const viewport = useRef(null)
-
-        useEffect(() => {
-            if (viewport.current) viewport.current.scrollTo({ top: viewport.current.scrollHeight, behavior: 'smooth' })
-        }, [messages, loading])
-
-        const send = async () => {
-            const text = input.trim()
-            if (!text || loading) return
-            const history = [...messages, { role: 'user', content: text }]
-            setMessages(history)
-            setInput('')
-            setLoading(true); setError(null)
-            try {
-                const sys = { role: 'system', content: CHAT_SYSTEM + buildChatContext(data, filters) }
-                const res = await apiChat([sys, ...history], 0.3)
-                if (res.ok) setMessages(m => [...m, { role: 'assistant', content: res.reply }])
-                else setError(res.error || 'error')
-            } catch (e) {
-                setError(e.message)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        return html`
-            <${Stack}>
-                <${Text} size="sm" c="dimmed">
-                    Fragen zu den aktuell gefilterten Feedback-Daten. Die Antwort erzeugt ein lokales
-                    Sprachmodell (phi-4-mini) auf Basis der angezeigten Kennzahlen.
-                <//>
-                <${Paper} withBorder radius="md" p="sm">
-                    <${ScrollArea} h={360} viewportRef=${viewport}>
-                        <${Stack} gap="sm">
-                            ${messages.length === 0 && !loading && html`
-                                <${Text} c="dimmed" size="sm">Noch keine Nachrichten. Stelle eine Frage,
-                                z.B. „Welche Folien sollte ich überarbeiten?“<//>`}
-                            ${messages.map((m, i) => html`<${ChatBubble} key=${i} role=${m.role} content=${m.content}/>`)}
-                            ${loading && html`
-                                <${Group} gap="xs"><${Loader} size="sm" color="red"/>
-                                    <${Text} size="sm" c="dimmed">Modell denkt nach …<//>
-                                <//>`}
-                        <//>
-                    <//>
-                <//>
-                ${error === 'llm_unavailable' && html`
-                    <${Alert} color="orange" title="KI nicht verfügbar">
-                        Das Sprachmodell ist derzeit nicht erreichbar (llama.cpp auf dem Server).
-                    <//>`}
-                ${error && error !== 'llm_unavailable' && html`
-                    <${Alert} color="red" title="Fehler">${error}<//>`}
-                <${Group} align="flex-end">
-                    <${Textarea} style=${{ flex: 1 }} autosize minRows=${1} maxRows=${4}
-                        placeholder="Frage zu den Feedback-Daten …" value=${input}
-                        onChange=${e => setInput(e.currentTarget.value)}
-                        onKeyDown=${e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-                        disabled=${loading}/>
-                    <${Button} color="red" onClick=${send} loading=${loading} disabled=${!input.trim()}>Senden<//>
-                    ${messages.length > 0 && html`
-                        <${Button} variant="default" onClick=${() => { setMessages([]); setError(null) }}>Leeren<//>`}
-                <//>
-            <//>`
-    }
-
     function App() {
         const [meta, setMeta] = useState({ courses: [], decks: [], groups: [] })
         // Kurs/Deck aus dem aktuell geoeffneten Foliensatz als sinnvolle Vorbelegung.
@@ -658,7 +501,6 @@ export async function mountDashboard(container, opts) {
                         <${Tabs.Tab} value="comments">Kommentare<//>
                         <${Tabs.Tab} value="time">Zeit × Gruppe<//>
                         <${Tabs.Tab} value="courses">Kurse<//>
-                        <${Tabs.Tab} value="chat">KI-Chat<//>
                     <//>
                     <${Tabs.Panel} value="ratings" pt="md"><${RatingsTable} ratings=${data.ratings} filters=${filters} reload=${load}/><//>
                     <${Tabs.Panel} value="survey" pt="md">
@@ -691,9 +533,6 @@ export async function mountDashboard(container, opts) {
                                     <//>`)}
                             <//>
                         <//>
-                    <//>
-                    <${Tabs.Panel} value="chat" pt="md">
-                        ${tab === 'chat' ? html`<${ChatPanel} data=${data} filters=${filters}/>` : null}
                     <//>
                 <//>`
         }
