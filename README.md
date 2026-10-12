@@ -30,6 +30,7 @@ Create a new lecture:
 
 Other modes:
 - `npx dennis_build dev` — Vite dev server with prod-identical routes and auto-reload
+  - optional dev hooks run commands when matching files change, then reload the browser, e.g. regenerate SVGs from PowerPoint sources: `"farberg": { "devHooks": [{ "watch": "^img/[^~][^/]*\\.pptx$", "run": "npm run img" }] }` in `package.json` (`watch` is a regex on the repo-relative path; changes are debounced and a hook never runs twice at once)
 - `npx dennis_build --watch` — rebuild `dist/` on every change (use any static server on `dist/`, e.g. VS Code Go Live)
 - `npx dennis_build --toc-only` — refresh the PDF links in `dist/toc.json` after PDFs were generated
 - `npx dennis_serve_dist dist` — tiny static server with extensionless URLs (used by CI for PDF rendering)

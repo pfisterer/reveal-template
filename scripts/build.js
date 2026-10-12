@@ -339,6 +339,35 @@ async function watchMode() {
 	process.stdin.resume?.()
 }
 
+// Dev-server hooks from package.json, e.g. regenerate SVGs when a PowerPoint source changes:
+//   "farberg": { "devHooks": [{ "watch": "^img/[^~].*\\.pptx$", "run": "npm run img" }] }
+// "watch" is a regex on the path relative to the repo root. Changes are debounced, a hook never runs twice at the same time (changes during a run trigger one more run), and the browser reloads after each run.
+function devHooks(pkg, reload) {
+	const { spawn } = require('child_process')
+	return ((pkg.farberg || {}).devHooks || []).map(({ watch, run }) => {
+		let timer = null, running = false, pending = false
+		const start = () => {
+			running = true
+			pending = false
+			console.log(`[devHook] ${run}`)
+			spawn(run, { cwd, shell: true, stdio: 'inherit' }).on('exit', code => {
+				running = false
+				if (code !== 0) console.error(`[devHook] "${run}" exited with ${code}`)
+				reload()
+				if (pending) start()
+			})
+		}
+		return {
+			pattern: new RegExp(watch),
+			trigger(rel) {
+				console.log(`[devHook] ${rel} changed`)
+				clearTimeout(timer)
+				timer = setTimeout(() => (running ? (pending = true) : start()), 500)
+			}
+		}
+	})
+}
+
 async function devServer() {
 	const vite = await import('vite')
 	const serveStatic = require('serve-static')
@@ -375,11 +404,14 @@ async function devServer() {
 		}]
 	})
 
+	const hooks = devHooks(pkg, () => server.ws.send({ type: 'full-reload' }))
+
 	// Regenerate staging on markdown/config changes, then full-reload
 	server.watcher.add(cwd)
 	server.watcher.on('all', (event, file) => {
 		const rel = path.relative(cwd, file)
 		if (rel.startsWith('.dennis-build') || rel.startsWith('dist') || rel.startsWith('node_modules')) return
+		for (const hook of hooks) if (hook.pattern.test(rel)) hook.trigger(rel)
 		if (!/\.md$|^deck\.config\.js$|^custom-code\.js$|^package\.json$/.test(rel)) return
 		generateStaging(scanDecks(), readPackageJson()).then(result => {
 			decks = result.decks
