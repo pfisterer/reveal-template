@@ -681,6 +681,11 @@ attribution a:visited {
   -moz-osx-font-smoothing: grayscale !important;
 }
 
+/* The menubar sits inside .reveal, so the slide bullet rule (.reveal ul li:before, an en dash) would otherwise overlay the first letter of every menu item. */
+.menubar>ul li:before {
+  content: none !important;
+}
+
 .menubar>ul a:hover {
   color: #1a1a1a !important;
 }
