@@ -6,6 +6,7 @@ Parameters:
 - data-begin: Begin indicator in the file (optional; substring match, first occurrence)
 - data-begin-nth: Start after the Nth occurrence of data-begin instead of the first (optional, 1-based)
 - data-end: End indicator in the file (optional)
+- data-include-markers: Also show the marker lines: "begin", "end" or "both" (optional; by default both marker lines are excluded)
 - data-link: Show a link to the file (optional)
 - data-no-wrap: Disable soft line wrapping; long lines scroll horizontally instead (optional)
 
@@ -22,6 +23,7 @@ Example
 <a 	data-code='bash'
 	data-begin="# Begin indicator in the file"
 	data-end="# End indicator in the file"
+	data-include-markers="both"
 	data-link
 	href="link/to/the/file.sh">Source code</a>
 */
@@ -58,7 +60,7 @@ function showCode(el, language, code, link, outdent) {
 	return newEl
 }
 
-function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth) {
+function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth, includeMarkers) {
 	let lines = code.split('\n');
 	let out = "";
 	beginMarker = beginMarker ? beginMarker.trim() : null
@@ -70,13 +72,21 @@ function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth) {
 	let nth = beginNth && beginNth > 0 ? beginNth : 1
 	let seen = 0
 	let beginFound = beginMarker ? false : true
+	// data-include-markers: keep the begin and/or end marker line in the snippet
+	let includeBegin = includeMarkers === 'begin' || includeMarkers === 'both'
+	let includeEnd = includeMarkers === 'end' || includeMarkers === 'both'
 
 	for (let line of lines) {
 		if (!beginFound && line.indexOf(beginMarker) >= 0) {
-			if (++seen >= nth)
+			if (++seen >= nth) {
 				beginFound = true;
+				if (includeBegin)
+					out += line + "\n";
+			}
 			continue;
 		} else if (beginFound && endMarker && line.indexOf(endMarker) >= 0) {
+			if (includeEnd)
+				out += line + "\n";
 			break;
 		} else if (!beginFound) {
 			continue;
@@ -370,6 +380,7 @@ export default () => {
 					let beginMarker = el.getAttribute("data-begin")
 					let beginNth = parseInt(el.getAttribute("data-begin-nth"), 10) || 1
 					let endMarker = el.getAttribute("data-end")
+					let includeMarkers = (el.getAttribute("data-include-markers") || "").trim().toLowerCase()
 					let showLink = el.hasAttribute("data-link")
 					let outdentCode = el.hasAttribute("data-outdent")
 					let noWrap = el.hasAttribute("data-no-wrap")
@@ -394,7 +405,7 @@ export default () => {
 							continue
 						}
 						const text = await response.text()
-						let code = extractBeginEndSnippet(text, beginMarker, endMarker, beginNth)
+						let code = extractBeginEndSnippet(text, beginMarker, endMarker, beginNth, includeMarkers)
 
 						if (!code) {
 							showError(el, `No content extracted from ${url} (begin=${beginMarker}, end=${endMarker})`)

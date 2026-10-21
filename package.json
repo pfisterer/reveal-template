@@ -1,6 +1,6 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
   "main": "init-reveal.js",
