@@ -67,6 +67,10 @@ Click on the link for documentation
 | [reveal-plugin-modify-font-size.js](plugins/reveal-plugin-modify-font-size.js) | Add keybindings `+` and `-` to change base font size |
 | [reveal-plugin-toggle-solutions.js](plugins/reveal-plugin-toggle-solutions.js) | Show of hide solutions                               |
 
+## Terminal Recordings (asciinema)
+
+Embed a recording with `<asciinema data-conf='{ "cols": 120, "rows": 30, "theme": "dhbw-light", "autoPlay": true }' src="img/demo.cast" />`; `data-conf` is passed to the [asciinema player](https://docs.asciinema.org/manual/player/options/). Besides the player's built-in themes, the template provides `dhbw-light` (black on white, palette readable on white; see [css/asciinema-themes.css](css/asciinema-themes.css)).
+
 ## Conversion to PDF
 
 Run `npx dennis_build && npx dennis_generate_pdfs` to render `dist/pdfs/<slug>.pdf` per deck plus a combined PDF (puppeteer-based; CI uses Gotenberg against the same `<slug>-print` pages instead).

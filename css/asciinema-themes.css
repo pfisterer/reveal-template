@@ -1,0 +1,23 @@
+/* Additional asciinema-player themes, usable via "theme":"<name>" in an <asciinema data-conf='...'> element. */
+
+/* dhbw-light: black on white; palette darkened so that all ANSI colors stay readable on white, bright white becomes dark gray. */
+.asciinema-player-theme-dhbw-light {
+	--term-color-foreground: #1a1a1a;
+	--term-color-background: #ffffff;
+	--term-color-0: #1a1a1a;
+	--term-color-1: #c62828;
+	--term-color-2: #2e7d32;
+	--term-color-3: #9e6a00;
+	--term-color-4: #1565c0;
+	--term-color-5: #8e24aa;
+	--term-color-6: #00838f;
+	--term-color-7: #616161;
+	--term-color-8: #424242;
+	--term-color-9: #e53935;
+	--term-color-10: #388e3c;
+	--term-color-11: #b07b00;
+	--term-color-12: #1e88e5;
+	--term-color-13: #ab47bc;
+	--term-color-14: #0097a7;
+	--term-color-15: #303030;
+}

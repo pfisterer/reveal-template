@@ -25,6 +25,7 @@ import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
 import 'reveal.js/reveal.css';
 import './css/zenburn.css';
 import 'asciinema-player/dist/bundle/asciinema-player.css';
+import './css/asciinema-themes.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './plugins/chalkboard/style.css';
 import './css/dhbw.css';
