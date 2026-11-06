@@ -12,7 +12,7 @@ import PrefixUrlPlugin from './plugins/reveal-plugin-prefix-with-base-url.js';
 import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
 import QuickNavPlugin from './plugins/reveal-plugin-quick-nav.js';
 import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
-import VerticalSlidesPlugin from './plugins/reveal-plugin-vertical-slides.js';
+import NavigationPlugin from './plugins/reveal-plugin-navigation.js';
 
 // Stylesheets — bundled and minified by Vite into a single hashed CSS file;
 // font url()s inside them are hashed automatically. Specifiers must match the
@@ -127,22 +127,7 @@ const defaultRevealOptions = {
 	keyboard: {
 		33: function () { Reveal.left(); }, // Don't go up using the presenter
 		34: function () { Reveal.right(); }, // Don't go down using the presenter
-		// Go to the agenda: same-deck jump if this deck has an #agenda slide,
-		// otherwise navigate via the root redirect page (it preserves the hash
-		// and forwards to the first deck, where the agenda lives).
-		65  /* a */: function () {
-			if (document.getElementById("agenda")) window.location.hash = "#/agenda"
-			else window.location.assign("./#/agenda")
-		},
-		// Go to the chapter overview slide (<div data-chapter-overview>) of this deck; without one, O keeps its default (slide overview, also on ESC)
-		79  /* o */: function () {
-			const target = document.querySelector('.reveal .slides [data-chapter-overview]')
-			const slide = target && target.closest('section')
-			if (slide) {
-				const { h, v } = Reveal.getIndices(slide)
-				Reveal.slide(h, v)
-			} else Reveal.toggleOverview()
-		},
+		// A (agenda) and O (chapter overview) are in plugins/reveal-plugin-navigation.js
 	},
 	// Bounds for smallest/largest possible scale to apply to content
 	minScale: 0.1,
@@ -234,17 +219,6 @@ function installSessionProbe() {
 	})
 }
 
-// The "?" help lists reveal's shortcuts; add the ones from keyboard: {} above. Registered after "ready", because Reveal.configure() (e.g. by the vertical-slides plugin) resets reveal's own list.
-const ShortcutHelpPlugin = {
-	id: 'shortcut-help',
-	init: (deck) => {
-		deck.on('ready', () => setTimeout(() => {
-			deck.registerKeyboardShortcut('A', 'Agenda (all chapters)')
-			deck.registerKeyboardShortcut('ESC, O', 'Slide overview (ESC), chapter overview slide (O)')
-		}))
-	}
-}
-
 // Build the Dennis-plugins array, injecting ESM deps into the factories that
 // need them. Plugins that take no deps stay as static factory imports.
 function buildDennisPlugins(deps) {
@@ -262,8 +236,7 @@ function buildDennisPlugins(deps) {
 		AsciinemaPlugin(deps.asciinemaPlayer.create),
 		QuickNavPlugin,
 		FeedbackPlugin,
-		VerticalSlidesPlugin,
-		ShortcutHelpPlugin
+		NavigationPlugin
 	]
 }
 

@@ -625,18 +625,88 @@ tr>tr:first-of-type {
   color: var(--dhbw-strip-color);
 }
 
-/* Chapter overview from data-summary (scripts/prerender.js): entries link to their section, but look like a plain list */
-.reveal [data-chapter-overview] a {
+/* Chapter overview from data-summary (scripts/prerender.js): a quiet table of contents with thin red numbers, hairlines between the entries, and the note and the level-2 entries as small grey lines below the title */
+.reveal ol.chapter-overview {
+  list-style: none;
+  counter-reset: co;
+  margin: 0.4em 0 0 0;
+  padding: 0;
+  width: 100%;
+}
+
+.reveal ol.chapter-overview > li {
+  counter-increment: co;
+  display: grid;
+  grid-template-columns: 2.2em 1fr;
+  column-gap: 0.5em;
+  align-items: baseline;
+  padding: 0.32em 0;
+  border-bottom: 1px solid #e6e6e6;
+  margin: 0;
+}
+
+.reveal ol.chapter-overview > li:last-child {
+  border-bottom: none;
+}
+
+.reveal ol.chapter-overview > li::before {
+  content: counter(co, decimal-leading-zero);
+  grid-row: span 2;
+  color: #e2001a;
+  font-weight: 300;
+  font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+}
+
+.reveal ol.chapter-overview a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Pause (B or "."): the attribution and the feedback button sit above reveal's pause overlay (z-index), hide them while paused; the same for the slide number and the menu bar, in case a theme lifts them */
-html:has(.reveal.paused) attribution,
-html:has(.reveal.paused) #fb-widget,
-html:has(.reveal.paused) .reveal .slide-number,
-html:has(.reveal.paused) .menubar {
-  visibility: hidden !important;
+.reveal ol.chapter-overview .co-title {
+  grid-column: 2;
+  color: #333;
+}
+
+.reveal ol.chapter-overview .co-sub {
+  grid-column: 2;
+  font-size: 0.6em;
+  color: #8a9096;
+  margin-top: 0.25em;
+}
+
+/* every small grey line below a title (its note or a sub-section) looks the same: own line, short hairline in front */
+.reveal ol.chapter-overview .co-sub > * {
+  display: block;
+  position: relative;
+  padding: 0.12em 0 0.12em 0.9em;
+}
+
+.reveal ol.chapter-overview .co-sub > *::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.82em;
+  width: 0.45em;
+  border-top: 1px solid #c5c9cc;
+}
+
+/* Menubar levels (plugins/reveal-plugin-menubar-levels.js): sub-sections in light brackets after their section */
+.menubar ul.menu > li.sm-bracket {
+  color: #8a9096;
+  opacity: 0.8;
+  padding: 0 !important;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* the links carry their own padding: pull the brackets close to the first and last sub-section */
+.menubar ul.menu > li.sm-bracket-open {
+  margin-right: -0.7em !important;
+}
+
+.menubar ul.menu > li.sm-bracket-close {
+  margin-left: -0.4em !important;
 }
 
 credits {
