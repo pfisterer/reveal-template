@@ -573,6 +573,28 @@ tr>tr:first-of-type {
   line-height: var(--dhbw-strip-height) !important;
 }
 
+/* Vertical slides (plugins/reveal-plugin-vertical-slides.js): red arrow with the number of detail slides before the slide number, thin red bar on the left edge of each vertical slide */
+.reveal .slide-number .vertical-hint {
+  display: inline-block;
+  cursor: pointer;
+  margin-right: 0.6em;
+  text-decoration: none;
+}
+
+.reveal .slide-number .vertical-hint .arrow {
+  color: #e2001a;
+}
+
+.reveal .slides section.vertical-slide .vertical-bar {
+  position: absolute;
+  left: -0.6em;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #e2001a;
+  opacity: 0.5;
+}
+
 credits {
   visibility: hidden;
 }
@@ -581,10 +603,11 @@ attribution {
   position: fixed !important;
   display: block !important;
   left: auto;
-  right: 98px;
+  right: calc(var(--fb-right, 66px) + 32px);
   /* leaves room on its right for the slide-number (right:8px) and the
-     feedback-plugin button in between (a fixed slot at --fb-right:66px, ~16px
-     wide; the attribution grows leftwards, so the slot stays clear at any
+     feedback-plugin button in between (a slot at --fb-right, default 66px,
+     ~16px wide; the vertical-slides plugin moves it left when the slide number
+     gets wider; the attribution grows leftwards, so the slot stays clear at any
      attribution width). */
   bottom: var(--dhbw-strip-bottom) !important;
   height: var(--dhbw-strip-height) !important;
