@@ -112,7 +112,7 @@ async function prerenderDecks(decks, pkg) {
 	const slides = new Map()
 	for (const deck of decks) {
 		const md = fs.readFileSync(path.join(cwd, deck.file), 'utf8')
-		const { slidesHtml } = await prerenderDeck(md, { file: deck.file, markdownConfig })
+		const { slidesHtml } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles: { root: cwd, assetExclude: assetConfig(pkg).assetExclude } })
 		slides.set(deck.slug, slidesHtml)
 	}
 	return slides

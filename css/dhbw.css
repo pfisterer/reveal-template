@@ -595,6 +595,50 @@ tr>tr:first-of-type {
   opacity: 0.5;
 }
 
+/* Directory tree under a code embed with data-files (scripts/prerender.js): collapsed, one small line until opened */
+.reveal details.code-files {
+  font-size: 0.45em;
+  margin: 0.2em 0 0 0;
+}
+
+/* Opened, the tree floats upwards over the code (the summary stays visible below it to close it again) */
+.reveal details.code-files {
+  position: relative;
+}
+
+.reveal details.code-files .dirtree-container {
+  position: absolute !important;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 420px;
+  overflow: auto;
+  max-width: none;
+  box-sizing: border-box;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+}
+
+.reveal details.code-files summary {
+  cursor: pointer;
+  color: var(--dhbw-strip-color);
+}
+
+/* Chapter overview from data-summary (scripts/prerender.js): entries link to their section, but look like a plain list */
+.reveal [data-chapter-overview] a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Pause (B or "."): the attribution and the feedback button sit above reveal's pause overlay (z-index), hide them while paused; the same for the slide number and the menu bar, in case a theme lifts them */
+html:has(.reveal.paused) attribution,
+html:has(.reveal.paused) #fb-widget,
+html:has(.reveal.paused) .reveal .slide-number,
+html:has(.reveal.paused) .menubar {
+  visibility: hidden !important;
+}
+
 credits {
   visibility: hidden;
 }
@@ -873,7 +917,19 @@ ul.dirtree ul ul ul li {
   align-items: baseline;
   gap: 12px;
   break-inside: avoid;
-  padding: 4px 0;
+  padding: 2px 0;
+}
+/* compact rows (reveal pads each cell by 14px), so all shortcuts fit on one screen */
+.r-overlay-help .r-overlay-help-content table {
+  font-size: 15px !important;
+}
+.r-overlay-help .r-overlay-help-content table td {
+  padding: 3px 4px !important;
+  width: auto !important;
+  line-height: 1.3;
+}
+.r-overlay-help-content .title {
+  margin-bottom: 8px;
 }
 /* redundant "KEY | ACTION" header row (columns are self-explanatory) */
 .r-overlay-help-content table tr:first-child {

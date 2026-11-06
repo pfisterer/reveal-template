@@ -134,6 +134,15 @@ const defaultRevealOptions = {
 			if (document.getElementById("agenda")) window.location.hash = "#/agenda"
 			else window.location.assign("./#/agenda")
 		},
+		// Go to the chapter overview slide (<div data-chapter-overview>) of this deck; without one, O keeps its default (slide overview, also on ESC)
+		79  /* o */: function () {
+			const target = document.querySelector('.reveal .slides [data-chapter-overview]')
+			const slide = target && target.closest('section')
+			if (slide) {
+				const { h, v } = Reveal.getIndices(slide)
+				Reveal.slide(h, v)
+			} else Reveal.toggleOverview()
+		},
 	},
 	// Bounds for smallest/largest possible scale to apply to content
 	minScale: 0.1,
@@ -225,6 +234,17 @@ function installSessionProbe() {
 	})
 }
 
+// The "?" help lists reveal's shortcuts; add the ones from keyboard: {} above. Registered after "ready", because Reveal.configure() (e.g. by the vertical-slides plugin) resets reveal's own list.
+const ShortcutHelpPlugin = {
+	id: 'shortcut-help',
+	init: (deck) => {
+		deck.on('ready', () => setTimeout(() => {
+			deck.registerKeyboardShortcut('A', 'Agenda (all chapters)')
+			deck.registerKeyboardShortcut('ESC, O', 'Slide overview (ESC), chapter overview slide (O)')
+		}))
+	}
+}
+
 // Build the Dennis-plugins array, injecting ESM deps into the factories that
 // need them. Plugins that take no deps stay as static factory imports.
 function buildDennisPlugins(deps) {
@@ -242,7 +262,8 @@ function buildDennisPlugins(deps) {
 		AsciinemaPlugin(deps.asciinemaPlayer.create),
 		QuickNavPlugin,
 		FeedbackPlugin,
-		VerticalSlidesPlugin
+		VerticalSlidesPlugin,
+		ShortcutHelpPlugin
 	]
 }
 

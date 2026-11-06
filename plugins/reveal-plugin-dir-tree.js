@@ -922,7 +922,7 @@ const dirTreeFactory = ({ zip, strToU8 }) => ({
 		}
 
 		function getFileList(el) {
-			return el.innerText.split('\n').filter(e => e.trim().length > 0);
+			return el.textContent.split('\n').filter(e => e.trim().length > 0);
 		}
 
 		// "code", "code/" and "/code" all mean the same thing to the author, so
