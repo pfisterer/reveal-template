@@ -68,6 +68,14 @@ Click on the link for documentation
 | [reveal-plugin-modify-font-size.js](plugins/reveal-plugin-modify-font-size.js) | Add keybindings `+` and `-` to change base font size |
 | [reveal-plugin-toggle-solutions.js](plugins/reveal-plugin-toggle-solutions.js) | Show of hide solutions                               |
 
+## Files of a Code Example
+
+Add `data-files` to a code embed to show a collapsed tree of the files the example works with, built from the file system at build time: `<a data-code="bash" data-begin="# Begin demo" data-end="# End demo" data-link data-files href="code/x/steps/demo.sh">demo.sh</a>`. Without a value, the directory is the one the script runs in (`cd "$(dirname "$0")/.."` in the script means the parent of its directory, otherwise its own directory); `data-files="code/x"` sets it explicitly. Only files that git would publish are listed (no ignored files), minus `farberg.assetExclude`. A click opens the tree (links, view, zip download).
+
+## Chapter Overview
+
+Put `<div data-chapter-overview></div>` on a slide; the build replaces it with one entry per slide that has a `data-summary`, in slide order, each linking to its slide: `<!-- .slide: data-name="Object Storage" data-summary="Object storage with an S3 API (SeaweedFS)" -->`. `data-level` (default 1): level 1 is a paragraph like plain text on a slide, level 2 a list item below it, level 3 a nested list item. A trailing `(...)` is shown as a comment. The key `O` jumps to this slide (`ESC` still opens the slide overview), `A` to the agenda.
+
 ## Terminal Recordings (asciinema)
 
 Embed a recording with `<asciinema data-conf='{ "cols": 120, "rows": 30, "theme": "dhbw-light", "autoPlay": true }' src="img/demo.cast" />`; `data-conf` is passed to the [asciinema player](https://docs.asciinema.org/manual/player/options/). Besides the player's built-in themes, the template provides `dhbw-light` (black on white, palette readable on white; see [css/asciinema-themes.css](css/asciinema-themes.css)).
