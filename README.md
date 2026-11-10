@@ -74,7 +74,7 @@ Add `data-files` to a code embed to show a collapsed tree of the files the examp
 
 ## Chapter Overview
 
-Put `<div data-chapter-overview></div>` on a slide; the build replaces it with one entry per slide that has a `data-summary`, in slide order, each linking to its slide: `<!-- .slide: data-name="Object Storage" data-summary="Object storage with an S3 API (SeaweedFS)" -->`. `data-level` (default 1): level 1 is a paragraph like plain text on a slide, level 2 a list item below it, level 3 a nested list item. A trailing `(...)` is shown as a comment. The key `O` jumps to this slide (`ESC` still opens the slide overview), `A` to the agenda.
+Put `<div data-chapter-overview></div>` on a slide; the build replaces it with one entry per slide that has a `data-summary`, in slide order, each linking to its slide (title, grey note and sub-entries are links, highlighted on hover): `<!-- .slide: data-name="Object Storage" data-summary="Object storage with an S3 API (SeaweedFS)" -->`. `data-level` (default 1): level 1 is a paragraph like plain text on a slide, level 2 a list item below it, level 3 a nested list item. A trailing `(...)` is shown as a comment. The key `O` jumps to this slide (`ESC` still opens the slide overview), `A` to the agenda.
 
 ## Terminal Recordings (asciinema)
 

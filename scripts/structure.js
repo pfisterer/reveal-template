@@ -69,7 +69,7 @@ function addCodeFileTrees(container, { root, assetExclude = [], file }) {
 	}
 }
 
-// Chapter overview: <div data-chapter-overview></div> becomes a list with one entry per slide that has data-summary (e.g. <!-- .slide: data-name="Object Storage" data-summary="Object storage with an S3 API (SeaweedFS)" -->), in slide order, each linking to its slide. Only data-summary is used; a trailing "(...)" is shown as <comment>. data-level (default 1): level 1 entries are numbered, deeper levels are small lines below their level-1 entry.
+// Chapter overview: <div data-chapter-overview></div> becomes a list with one entry per slide that has data-summary (e.g. <!-- .slide: data-name="Object Storage" data-summary="Object storage with an S3 API (SeaweedFS)" -->), in slide order, each linking to its slide. Only data-summary is used; a trailing "(...)" is shown as <comment>. data-level (default 1): level 1 entries are numbered, deeper levels are small lines below their level-1 entry. Every line is a link to its slide.
 function addChapterOverviews(container) {
 	const targets = container.querySelectorAll('[data-chapter-overview]')
 	if (!targets.length) return
@@ -109,7 +109,7 @@ function addChapterOverviews(container) {
 				head.setAttribute('href', href)
 				current.appendChild(head)
 				// the note of a level-1 entry is the first small line below it, styled like the sub-sections
-				if (note) current.appendChild(el('div', 'co-sub')).appendChild(el('span', null, note))
+				if (note) current.appendChild(el('div', 'co-sub')).appendChild(el('a', null, note)).setAttribute('href', href)
 				ol.appendChild(current)
 				continue
 			}

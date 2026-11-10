@@ -256,6 +256,20 @@ body {
   background: rgb(247, 247, 247);
 }
 
+/* Inline code in running text: a bit smaller and lighter than the text around it, so that it stays recognizable as code without dominating the slide */
+.reveal :not(pre) > code {
+  font-size: 0.85em;
+  color: #4e565c;
+  background: rgb(252, 252, 252);
+  padding: 0 0.2em;
+  border-radius: 0.2em;
+}
+
+/* In headings, code keeps the color of the heading */
+.reveal .slides :is(h1, h2, h3, h4) code {
+  color: inherit;
+}
+
 .reveal pre code {
   display: block;
   padding: 5px;
@@ -661,6 +675,10 @@ tr>tr:first-of-type {
 .reveal ol.chapter-overview a {
   color: inherit;
   text-decoration: none;
+}
+
+.reveal ol.chapter-overview a:hover {
+  color: #e2001a;
 }
 
 .reveal ol.chapter-overview .co-title {
