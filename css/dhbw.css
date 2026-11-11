@@ -253,6 +253,8 @@ body {
   border: 1px solid #e3e6e8;
   border-radius: 4px;
   background: rgb(252, 252, 252);
+  /* Embedded code (data-code) sits in a paragraph: do not inherit the semibold lead-line weight */
+  font-weight: normal;
 }
 
 .reveal code {
@@ -274,7 +276,7 @@ body {
   cursor: pointer;
 }
 
-/* Hover shows a quiet "copy", a click turns it into "copied" */
+/* Hover shows a quiet "copy" inside the right end of the code box, a click turns it into "copied" */
 .reveal .slides :not(pre):not(a) > code:hover,
 .reveal .slides code.inline-code-copied {
   position: relative;
@@ -284,10 +286,10 @@ body {
 .reveal .slides code.inline-code-copied::after {
   content: 'copy';
   position: absolute;
-  left: 100%;
+  right: 0.25em;
   top: 50%;
   z-index: 5;
-  transform: translate(0.4em, -50%);
+  transform: translateY(-50%);
   padding: 0.1em 0.45em;
   border-radius: 0.25em;
   background: #4e565c;
