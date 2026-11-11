@@ -63,18 +63,23 @@ function loadRevealAndPlugins() {
 // Third-party ESM deps. `plugins` entries register with Reveal directly;
 // `deps` are libraries injected into the Dennis-plugin factories.
 async function loadEsmDeps(isPrint) {
+	// mermaid (about 3 MB) and the asciinema player are only loaded when the deck uses them; the built HTML already contains the mermaid blocks (fences and <div class="mermaid">) and <asciinema> before Reveal starts
+	const hasMermaid = !!document.querySelector('.reveal .mermaid, .reveal [data-code="mermaid"]')
+	const hasAsciinema = !!document.querySelector('.reveal asciinema')
 	const [qrCreator, fflate, asciinemaPlayer, revealMermaid, simplemenu] = await Promise.all([
 		import('qr-creator/dist/qr-creator.es6.min.js'),
 		import('fflate'),
-		import('asciinema-player'),
-		import('reveal.js-mermaid-plugin/plugin/mermaid/mermaid.esm.js'),
+		hasAsciinema ? import('asciinema-player') : null,
+		hasMermaid ? import('reveal.js-mermaid-plugin/plugin/mermaid/mermaid.esm.js') : null,
 		import('reveal.js-simplemenu/plugin/simplemenu/simplemenu.esm.js')
 	])
+	const mermaidPlugins = revealMermaid ? [revealMermaid.default] : []
 	return {
-		deps: { qrCreator, fflate, asciinemaPlayer },
+		// Without <asciinema> elements the plugin never calls create
+		deps: { qrCreator, fflate, asciinemaPlayer: asciinemaPlayer ?? { create: () => null } },
 		// The menu bar is pointless in the PDF and simplemenu trips over the
 		// restructured DOM of Reveal's print view -> skip it there.
-		plugins: isPrint ? [revealMermaid.default] : [revealMermaid.default, simplemenu.default]
+		plugins: isPrint ? mermaidPlugins : [...mermaidPlugins, simplemenu.default]
 	}
 }
 
