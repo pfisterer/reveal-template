@@ -187,6 +187,17 @@ async function generateStaging(decks, pkg) {
 	return { decks, slides }
 }
 
+// Course profiles in profiles/<id>.json (see plugins/course-profile.js), listed in toc.json for the profile picker (key U)
+function courseProfiles() {
+	const dir = path.join(cwd, 'profiles')
+	if (!fs.existsSync(dir)) return []
+	return fs.readdirSync(dir).filter(f => /^[A-Za-z0-9_-]+\.json$/.test(f)).sort().map(f => {
+		const id = f.replace(/\.json$/, '')
+		try { return { id, title: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')).title || id } }
+		catch (e) { console.warn(`profiles/${f}: ${e.message}`); return null }
+	}).filter(Boolean)
+}
+
 function buildToc(decks, pkg) {
 	const combinedPdfName = combined_pdf(pkg)
 	const combinedExists = fs.existsSync(path.join(pdfDir, combinedPdfName))
@@ -195,6 +206,7 @@ function buildToc(decks, pkg) {
 		generated: new Date().toISOString(),
 		title: pkg.title,
 		combinedPdf: combinedExists ? `pdfs/${combinedPdfName}` : null,
+		profiles: courseProfiles(),
 		decks: decks.map(d => ({
 			order: d.order,
 			file: d.file,

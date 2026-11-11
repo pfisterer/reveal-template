@@ -57,6 +57,18 @@ export function formatCourseDate(date) {
 	return isNaN(d) ? date : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
+// Id of the active profile (or null), without loading it
+export function activeCourseProfileId() {
+	return storage(s => s.getItem(KEY))
+}
+
+// Activate a profile (null: none) and reload the page so that agenda and badges follow it
+export function switchCourseProfile(id) {
+	const url = new URL(window.location.href)
+	url.searchParams.set('profile', id || 'none')
+	window.location.assign(url.pathname + url.search + url.hash)
+}
+
 export function courseResetLink() {
 	const url = new URL(window.location.href)
 	url.searchParams.set('profile', 'none')

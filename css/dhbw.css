@@ -269,6 +269,46 @@ body {
   border-radius: 0.2em;
 }
 
+/* Click on inline code copies it (reveal-plugin-show-code-snippets.js); not for code inside links */
+.reveal .slides :not(pre):not(a) > code {
+  cursor: pointer;
+}
+
+/* Hover shows a quiet "copy", a click turns it into "copied" */
+.reveal .slides :not(pre):not(a) > code:hover,
+.reveal .slides code.inline-code-copied {
+  position: relative;
+}
+
+.reveal .slides :not(pre):not(a) > code:hover::after,
+.reveal .slides code.inline-code-copied::after {
+  content: 'copy';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  z-index: 5;
+  transform: translate(0.4em, -50%);
+  padding: 0.1em 0.45em;
+  border-radius: 0.25em;
+  background: #4e565c;
+  color: #ffffff;
+  font-family: 'Nunito Sans Variable', Helvetica, sans-serif;
+  font-size: 0.6em;
+  font-weight: 600;
+  white-space: nowrap;
+  text-indent: 0;
+  pointer-events: none;
+}
+
+.reveal .slides :not(pre):not(a) > code:hover:not(.inline-code-copied)::after {
+  background: #eceeef;
+  color: #8a9195;
+}
+
+.reveal .slides code.inline-code-copied::after {
+  content: 'copied';
+}
+
 /* In headings, code keeps the color of the heading */
 .reveal .slides :is(h1, h2, h3, h4) code {
   color: inherit;
@@ -1429,4 +1469,99 @@ ul.dirtree ul ul ul li {
 .reveal pre .copy-code-btn.copied {
   color: #2d6a4f;
   border-color: #2d6a4f;
+}
+
+/* Course profile picker (key U, reveal-plugin-course-profile.js) */
+.course_picker {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(51, 57, 61, 0.25);
+  font-family: 'Nunito Sans Variable', Helvetica, sans-serif;
+}
+
+.course_picker_box {
+  min-width: 320px;
+  max-width: 90vw;
+  padding: 18px 18px 14px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+}
+
+.course_picker_head {
+  margin: 0 10px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a9195;
+}
+
+.course_picker_item {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
+  font-size: 17px;
+  color: #33393d;
+  text-align: left;
+  cursor: pointer;
+}
+
+.course_picker_item:hover,
+.course_picker_item:focus {
+  background: #f4f5f6;
+  outline: none;
+}
+
+.course_picker_note {
+  font-size: 13px;
+  color: #a3a9ad;
+}
+
+.course_picker_active .course_picker_title {
+  font-weight: 700;
+}
+
+.course_picker_active .course_picker_title::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 8px 2px 0;
+  border-radius: 50%;
+  background: #e2001a;
+}
+
+.course_picker_empty {
+  margin: 8px 10px 0;
+  font-size: 13px;
+  color: #8a9195;
+}
+
+/* Terminal recordings (reveal-plugin-asciinema.js): quiet frame like the code blocks */
+/* The player sits in a paragraph: do not inherit the semibold lead-line weight */
+.reveal [data-farberg-asciinema] {
+  font-weight: normal;
+}
+
+/* The player draws its text in a <pre> that spans the terminal (inset: 0); the code block rule .reveal pre { width: 95% } would make it narrower and cut off the last columns */
+.reveal div.ap-term pre.ap-term-text {
+  width: auto;
+}
+
+.reveal [data-farberg-asciinema] .ap-player {
+  border: 1px solid #e3e6e8;
+  border-radius: 4px;
+  overflow: hidden;
 }

@@ -4,6 +4,10 @@ function initSlide(asciinemaCreate, slide) {
 	let asciinemaElements = slide.getElementsByTagName("asciinema")
 
 	for (let el of asciinemaElements) {
+		// Styles of the <asciinema> element (e.g. style="width: 90%") apply to the player; keep the original ones before hiding the element (the slide can be shown again)
+		if (el.dataset.playerStyle === undefined) el.dataset.playerStyle = el.getAttribute('style') || ''
+		const style = el.dataset.playerStyle
+
 		//Make element invisible
 		el.style.display = "none"
 
@@ -13,8 +17,7 @@ function initSlide(asciinemaCreate, slide) {
 		const div = document.createElement('div')
 
 		div.setAttribute('data-farberg-asciinema', 'true')
-		// Styles of the <asciinema> element (e.g. style="width: 90%") apply to the player
-		if (el.getAttribute('style')) div.setAttribute('style', el.getAttribute('style'))
+		if (style) div.setAttribute('style', style)
 
 		players.push(asciinemaCreate(source, div, JSON.parse(conf)))
 

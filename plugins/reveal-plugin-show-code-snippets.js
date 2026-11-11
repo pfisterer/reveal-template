@@ -324,11 +324,26 @@ function addCopyButton(preEl) {
 	preEl.appendChild(btn);
 }
 
+// Click on inline code (not in code blocks, links or diagrams) copies its text; a short "copied" mark confirms it. A click that ends a text selection does not copy.
+function enableInlineCodeCopy(slidesEl) {
+	slidesEl.addEventListener('click', (e) => {
+		const code = e.target.closest('code');
+		if (!code || code.closest('pre, a, svg, .mermaid')) return;
+		if (String(window.getSelection() || '').length > 0) return;
+		writeToClipboard(code.textContent).then(() => {
+			code.classList.add('inline-code-copied');
+			clearTimeout(code.__copiedTimer);
+			code.__copiedTimer = setTimeout(() => code.classList.remove('inline-code-copied'), 1200);
+		}).catch(() => {});
+	});
+}
+
 export default () => {
 	return {
 		id: 'show_code_snippets',
 		init: (deck) => {
 			injectStyles();
+			enableInlineCodeCopy(deck.getSlidesElement());
 
 			// Re-measure wrap points after fonts settle and on every layout change.
 			// Only the visible slide can be measured (hidden slides have no layout),
