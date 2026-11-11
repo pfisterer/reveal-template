@@ -321,6 +321,11 @@ body {
   border: 1px solid #d0d0d0;
 }
 
+/* Content tables start 20px from the left edge like the indented lists (instead of centered); an inline style on the table still wins */
+.reveal .slides table:not(.toc_table) {
+  margin: 0 auto 0 20px;
+}
+
 .reveal table th {
   font-weight: bold;
 }
