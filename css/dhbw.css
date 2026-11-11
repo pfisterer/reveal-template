@@ -612,6 +612,8 @@ tr>tr:first-of-type {
 /* ---------------------------------------------------------------------- */
 
 :root {
+  /* Simplemenu waits up to 1 s for this variable of a reveal theme before it starts; we use no reveal theme, so set it here (the value is not used, the colors come from the computed styles) */
+  --r-main-color: #4e565c;
   --dhbw-strip-color: #4e565c;
   --dhbw-strip-font-size: 12px;
   --dhbw-strip-height: 20px;
@@ -1568,4 +1570,9 @@ ul.dirtree ul ul ul li {
   border: 1px solid #e3e6e8;
   border-radius: 4px;
   overflow: hidden;
+}
+
+/* Until reveal.js is ready, the raw slides lie on top of each other and the last one (e.g. "Lab Setup") flashes up; hide them until then. The print version gets no "ready" class but "print-pdf" on <html>. */
+html:not(.print-pdf) .reveal:not(.ready) .slides {
+  visibility: hidden;
 }
