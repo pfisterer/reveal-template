@@ -13,6 +13,7 @@ import AsciinemaPlugin from './plugins/reveal-plugin-asciinema.js';
 import QuickNavPlugin from './plugins/reveal-plugin-quick-nav.js';
 import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
 import NavigationPlugin from './plugins/reveal-plugin-navigation.js';
+import CourseProfilePlugin from './plugins/reveal-plugin-course-profile.js';
 
 // Stylesheets — bundled and minified by Vite into a single hashed CSS file;
 // font url()s inside them are hashed automatically. Specifiers must match the
@@ -29,6 +30,9 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 import './css/asciinema-themes.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './plugins/chalkboard/style.css';
+// Nunito Sans as variable font, bundled so that slides look the same on every machine and offline, with intermediate weights (Helvetica/Arial only have regular and bold)
+import '@fontsource-variable/nunito-sans';
+import '@fontsource-variable/nunito-sans/wght-italic.css';
 import './css/dhbw.css';
 import 'reveal.js-simplemenu/plugin/simplemenu/simplemenu.css';
 
@@ -133,6 +137,10 @@ const defaultRevealOptions = {
 	minScale: 0.1,
 	maxScale: 3,
 
+	// Slide size 16:10 (fits 16:10 projectors exactly and 16:9 with narrow bars); the height stays at the reveal default, so font sizes do not change
+	width: 1120,
+	height: 700,
+
 	// Factor of the display size that should remain empty around the content
 	margin: 0.05,
 
@@ -236,7 +244,8 @@ function buildDennisPlugins(deps) {
 		AsciinemaPlugin(deps.asciinemaPlayer.create),
 		QuickNavPlugin,
 		FeedbackPlugin,
-		NavigationPlugin
+		NavigationPlugin,
+		CourseProfilePlugin
 	]
 }
 

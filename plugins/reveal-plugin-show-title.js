@@ -42,22 +42,47 @@ function showTitle(deck, packageJson) {
 			}
 		}
 
+		// Chapter number of the deck ("04e"), from the page config of dennis_build
+		const configEl = document.getElementById('farberg-deck-config')
+		const meta = (configEl ? JSON.parse(configEl.textContent).deck : null) || {}
+		const number = meta.number ? `${meta.number}${meta.sub || ''}` : ''
+
 		el.innerHTML = `
-				<div style="height: 120px;"></div>
-					<h1>${lectureTitle}</h1>
-					<h3>${slideTitle}</h3>
-
-					<div style="height: 170px;"></div>
-
-					<div style="font-size: .7em; font-weight: bold;">
-						${authorBlock}
-						<br/><br/>
+				<div class="title_layout">
+					<div class="title_lecture">${lectureTitle}</div>
+					<div class="title_main">
+						${number ? `<div class="title_number">${number}</div>` : ''}
+						<h1 class="title_chapter">${slideTitle}</h1>
+						<div class="title_rule"></div>
 					</div>
+					<div class="title_footer">
+						<div class="title_authors">${authorBlock}</div>
+					</div>
+				</div>
 			`;
 
 		document.title = `${lectureTitle} - ${slideTitle}`
 	}
 
+}
+
+// Section slides (a slide with nothing but a h1, e.g. "# Observability") become dividers: class section_divider plus the chapter ("04b · Observability") in the top right corner
+function markSectionSlides(deck) {
+	const configEl = document.getElementById('farberg-deck-config')
+	const meta = (configEl ? JSON.parse(configEl.textContent).deck : null) || {}
+	const context = [meta.number ? `${meta.number}${meta.sub || ''}` : '', meta.title || ''].filter(Boolean).join('\u2002·\u2002')
+	for (const section of deck.getSlidesElement().querySelectorAll('section')) {
+		if (section.querySelector('section') || section.querySelector('.lecturetitle')) continue
+		const content = [...section.children].filter(el => !el.matches('aside.notes, script'))
+		if (content.length !== 1 || content[0].tagName !== 'H1') continue
+		section.classList.add('section_divider')
+		if (context) {
+			const el = document.createElement('div')
+			el.className = 'section_context'
+			el.textContent = context
+			section.prepend(el)
+		}
+	}
 }
 
 export default () => {
@@ -77,6 +102,7 @@ export default () => {
 				return
 			}
 			showTitle(deck, info)
+			markSectionSlides(deck)
 		}
 	}
 }

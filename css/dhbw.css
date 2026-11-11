@@ -32,7 +32,7 @@ body {
 }
 
 .reveal {
-  font-family: 'Source Sans Pro', Helvetica, sans-serif;
+  font-family: 'Nunito Sans Variable', Helvetica, sans-serif;
   font-size: 31px;
   font-weight: normal;
   /* color: #222; */
@@ -64,7 +64,7 @@ body {
 .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5, .reveal h6 {
   margin: 0 0 20px 0;
   color: #e10217;
-  font-family: 'Source Sans Pro', Helvetica, sans-serif;
+  font-family: 'Nunito Sans Variable', Helvetica, sans-serif;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: normal;
@@ -81,6 +81,8 @@ body {
 .reveal h2 {
   font-size: 1.5em;
   padding-bottom: 5px;
+  margin-bottom: 19px;
+  border-bottom: 1px solid #e3e6e8;
 }
 
 .reveal h3 {
@@ -152,7 +154,7 @@ body {
 }
 
 .reveal ul li {
-  color: #000000;
+  color: #4e565c;
   /* was #000000 */
   font-size: 90%;
   margin-top: 0em;
@@ -179,7 +181,7 @@ body {
 }
 
 .reveal ul ul li {
-  color: #000000;
+  color: #4e565c;
   font-size: 90%;
   margin-top: 0em;
   margin-left: 0px;
@@ -248,7 +250,9 @@ body {
   font-family: monospace;
   line-height: 1.2em;
   word-wrap: break-word;
-  box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid #e3e6e8;
+  border-radius: 4px;
+  background: rgb(252, 252, 252);
 }
 
 .reveal code {
@@ -259,7 +263,7 @@ body {
 /* Inline code in running text: a bit smaller and lighter than the text around it, so that it stays recognizable as code without dominating the slide */
 .reveal :not(pre) > code {
   font-size: 0.85em;
-  color: #4e565c;
+  color: inherit;
   background: rgb(252, 252, 252);
   padding: 0 0.2em;
   border-radius: 0.2em;
@@ -276,8 +280,8 @@ body {
   overflow: auto;
   /* Dennis	max-height: 400px; */
   word-wrap: normal;
-  background: #3F3F3F;
-  color: #DCDCDC;
+  background: rgb(252, 252, 252);
+  color: #33393d;
 }
 
 .reveal code.language-mermaid,
@@ -375,7 +379,8 @@ body {
  *********************************************/
 
 comment {
-  color: #4e565c;
+  color: #8a9195;
+  font-size: 0.9em;
   /*#4e565c;:
   alt: #5F6E7
 	opacity: 0.5;8*/
@@ -587,16 +592,46 @@ tr>tr:first-of-type {
   line-height: var(--dhbw-strip-height) !important;
 }
 
-/* Vertical slides (plugins/reveal-plugin-vertical-slides.js): red arrow with the number of detail slides before the slide number, thin red bar on the left edge of each vertical slide */
-.reveal .slide-number .vertical-hint {
-  display: inline-block;
+/* Vertical slides (plugins/reveal-plugin-navigation.js): tab in the top right corner (red on a main slide with detail slides below, grey on a detail slide), thin red bar on the left edge of each vertical slide */
+.reveal .vertical-tab {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 30;
+  border: none;
+  border-radius: 0 0 0 6px;
+  padding: 5px 12px 6px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.2;
+  color: #fff;
+  background: #e2001a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
   cursor: pointer;
-  margin-right: 0.6em;
-  text-decoration: none;
 }
 
-.reveal .slide-number .vertical-hint .arrow {
-  color: #e2001a;
+.reveal .vertical-tab .arrow {
+  font-weight: 700;
+}
+
+.reveal .vertical-tab:hover {
+  background: #b80015;
+}
+
+.reveal .vertical-tab.vertical-tab-inside {
+  color: #4e565c;
+  background: #eceeef;
+  box-shadow: none;
+}
+
+.reveal .vertical-tab.vertical-tab-inside:hover {
+  background: #dfe2e4;
+}
+
+.reveal .vertical-tab[hidden],
+.reveal.overview .vertical-tab,
+.print-pdf .vertical-tab {
+  display: none;
 }
 
 .reveal .slides section.vertical-slide .vertical-bar {
@@ -1077,4 +1112,316 @@ ul.dirtree ul ul ul li {
   border-radius: 5px;
   padding: 2px 8px !important;
   flex: 0 0 44%;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Agenda (plugins/reveal-plugin-show-toc.js) and course profiles          */
+/* ---------------------------------------------------------------------- */
+.reveal .toc {
+  text-align: left;
+  line-height: 1.25;
+  margin-top: 0.3em;
+}
+
+.reveal .toc_columns {
+  column-count: 2;
+  column-gap: 1.6em;
+}
+
+.reveal .toc_group {
+  break-inside: avoid;
+  padding: 0.35em 0 0.45em;
+  border-top: 1px solid #d5d9db;
+}
+
+.reveal .toc_row {
+  border-radius: 0.2em;
+  transition: background 0.12s;
+  display: grid;
+  grid-template-columns: 1.4em minmax(0, 1fr) auto 1.1em;
+  align-items: baseline;
+  column-gap: 0.5em;
+  padding: 0.08em 0;
+}
+
+.reveal .toc .toc_no {
+  text-align: right;
+}
+
+.reveal .toc_row_chapter .toc_no {
+  color: #e2001a;
+  font-weight: 700;
+}
+
+.reveal .toc .toc_title {
+  /* A long title wraps inside its column (hanging under the first line), the plan and the file icons stay on the first line */
+  overflow-wrap: anywhere;
+}
+
+.reveal .toc_row_chapter .toc_title {
+  font-weight: 700;
+}
+
+.reveal .toc_row_sub .toc_no {
+  color: #8a9195;
+}
+
+.reveal .toc .toc_title,
+.reveal .toc .toc_title:visited {
+  color: #33393d;
+  text-decoration: none;
+}
+
+.reveal .toc .toc_title:hover {
+  color: #e2001a;
+  text-decoration: none;
+}
+
+.reveal .toc_files img {
+  height: 0.65em;
+  margin: 0 0 0 0.25em;
+  vertical-align: baseline;
+}
+
+.reveal .toc_files {
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+
+.reveal .toc_row:hover .toc_files {
+  opacity: 0.9;
+}
+
+.reveal .toc_row:hover {
+  background: #f4f5f6;
+}
+
+.reveal .toc_plan,
+.reveal .toc_files {
+  line-height: 1;
+}
+
+.reveal .toc_plan {
+  font-size: 0.78em;
+  color: #6b7378;
+  white-space: nowrap;
+}
+
+.reveal .toc_course_prior .toc_title,
+.reveal .toc_course_prior .toc_no {
+  color: #a3a9ad !important;
+}
+
+.reveal .toc_course_skip .toc_title,
+.reveal .toc_course_skip .toc_no {
+  color: #cfd3d5 !important;
+}
+
+.reveal .toc_footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 0.7em;
+  padding-top: 0.4em;
+  border-top: 1px solid #d5d9db;
+  font-size: 0.6em;
+  color: #6b7378;
+}
+
+.reveal .toc_footer .toc_combined {
+  color: #4e565c;
+  text-decoration: none;
+}
+
+.reveal .toc_footer .toc_combined:hover {
+  color: #e2001a;
+}
+
+.reveal .toc_footer .toc_combined img {
+  height: 1em;
+  margin: 0 0.4em 0 0;
+  vertical-align: -0.15em;
+}
+
+.reveal .toc_course_key {
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 0.15em;
+  margin: 0 0.4em 0 1.2em;
+  vertical-align: -0.05em;
+}
+
+.reveal .toc_course_key_prior { background: #a3a9ad; }
+.reveal .toc_course_key_skip { background: #cfd3d5; }
+
+.reveal .toc_course_legend a {
+  margin-left: 1.5em;
+  color: #6b7378;
+}
+
+.reveal .slides section .course_badge {
+  position: absolute;
+  top: 0.2em;
+  right: 0;
+  font-size: 0.38em;
+  letter-spacing: 0.02em;
+  color: #8a9195;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Title slide (plugins/reveal-plugin-show-title.js): lecture as a small    */
+/* overline, chapter number and title, a short red rule, authors at the end */
+/* ---------------------------------------------------------------------- */
+.reveal .lecturetitle .title_layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 600px;
+  padding: 30px 0 10px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.reveal .lecturetitle .title_lecture {
+  font-size: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a9195;
+}
+
+.reveal .lecturetitle .title_number {
+  font-size: 1.5em;
+  font-weight: 300;
+  line-height: 1;
+  color: #c9cdd0;
+  margin-bottom: 0.15em;
+}
+
+.reveal .lecturetitle h1.title_chapter {
+  font-size: 2.3em;
+  line-height: 1.1;
+  text-transform: none;
+  color: #33393d;
+  margin: 0;
+}
+
+.reveal .lecturetitle .title_rule {
+  width: 80px;
+  height: 5px;
+  background: #e2001a;
+  margin-top: 0.7em;
+}
+
+.reveal .lecturetitle .title_footer {
+  font-size: 0.55em;
+  color: #6b7378;
+}
+
+.reveal .lecturetitle .title_authors a {
+  color: #33393d;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.reveal .lecturetitle a:hover {
+  color: #e2001a;
+}
+
+/* Content slides: lead lines (paragraphs directly in the slide) dark and semibold, so they rank above the bullets */
+.reveal .slides section > p {
+  color: #464e53;
+  font-weight: 550;
+}
+
+/* Section slides (only a heading, marked by reveal-plugin-show-title.js): a calm divider with the chapter in the top right corner */
+.reveal .slides section.section_divider {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.reveal .slides section.section_divider > h1 {
+  margin: 0;
+  font-size: 2.3em;
+  text-transform: none;
+  color: #464e53;
+}
+
+.reveal .slides section.section_divider > h1::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 5px;
+  margin-top: 0.3em;
+  background: #e2001a;
+}
+
+.reveal .slides section.section_divider .section_context {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.42em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3a9ad;
+}
+
+.reveal .slides section.section_divider .course_badge {
+  top: 1.6em;
+}
+
+/* Code blocks: light and quiet instead of a dark box (overrides the zenburn theme); muted syntax colors, red only for keywords */
+.reveal pre code.hljs {
+  background: rgb(252, 252, 252);
+  color: #33393d;
+  padding: 0.45em 0.6em;
+}
+
+.reveal pre code.hljs :is(.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-built_in, .hljs-builtin-name, .hljs-deletion) {
+  color: #a8182c;
+}
+
+.reveal pre code.hljs :is(.hljs-string, .hljs-addition, .hljs-regexp) {
+  color: #2d6a4f;
+}
+
+.reveal pre code.hljs :is(.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-link) {
+  color: #1d5f8a;
+}
+
+.reveal pre code.hljs :is(.hljs-attr, .hljs-attribute, .hljs-name, .hljs-tag, .hljs-title, .hljs-section, .hljs-type, .hljs-selector-id, .hljs-selector-class) {
+  color: #2f4f7a;
+}
+
+.reveal pre code.hljs :is(.hljs-variable, .hljs-template-variable, .hljs-template-tag, .hljs-subst, .hljs-params) {
+  color: #33393d;
+}
+
+.reveal pre code.hljs :is(.hljs-comment, .hljs-quote, .hljs-meta) {
+  color: #8a9195;
+}
+
+.reveal pre code.hljs .hljs-strong {
+  font-weight: 600;
+}
+
+/* Copy button (reveal-plugin-show-code-snippets.js) in the light code blocks */
+.reveal pre .copy-code-btn {
+  background: #ffffff;
+  color: #8a9195;
+  border: 1px solid #d5d9db;
+}
+
+.reveal pre .copy-code-btn:hover {
+  background: #eceeef;
+  color: #33393d;
+}
+
+.reveal pre .copy-code-btn.copied {
+  color: #2d6a4f;
+  border-color: #2d6a4f;
 }

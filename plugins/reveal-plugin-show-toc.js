@@ -12,7 +12,11 @@
 	<!-- .slide: id="agenda" -->
 
 	<div data-toc-src="toc.json" style="font-size: 0.82em;" />
+
+	With a course profile (course-profile.js, start link ?profile=<id>), prior knowledge and skipped decks are muted, an extra column shows the date or "optional", and a legend below the table links to the full agenda.
  */
+
+import { loadCourseProfile, courseEntry, formatCourseDate, courseResetLink } from './course-profile.js'
 
 import printerSymbolUrl from '../img/printer-symbol.svg?url'
 import pdfSymbolUrl from '../img/pdf-symbol.svg?url'
@@ -22,32 +26,50 @@ function encodePath(p) {
 	return p.split('/').map(encodeURIComponent).join('/')
 }
 
-function renderToc(toc) {
-	const rows = toc.decks.map(deck => {
-		const isSubchapter = !!deck.sub
-		const printLink = `<a href='${encodePath(deck.printPath)}'> <img src="${printerSymbolUrl}" style="height: 0.7em; margin: 0;"> </a>`
-		const pdfLink = deck.pdf
-			? `<a href='${encodePath(deck.pdf)}'> <img src="${pdfSymbolUrl}" style="height: 0.7em; margin: 0;"> </a>`
-			: ''
+function renderToc(toc, profile) {
+	// One group per chapter (a deck without sub letter) with its sub-chapters; with more than 10 entries the groups flow into two columns
+	const groups = []
+	for (const deck of toc.decks) {
+		if (!deck.sub || groups.length === 0) groups.push([])
+		groups[groups.length - 1].push(deck)
+	}
+
+	const row = deck => {
+		const isSub = !!deck.sub
+		// With a course profile: prior knowledge and skipped decks are muted, the plan column shows the date (core) or "optional"
+		const entry = courseEntry(profile, 'decks', (deck.number || '') + (deck.sub || ''))
+		const status = profile ? ` toc_course_${entry.status}` : ''
+		const plan = !profile ? '' : entry.status === 'optional'
+			? ['optional', formatCourseDate(entry.date)].filter(Boolean).join(', ')
+			: (entry.status === 'core' ? formatCourseDate(entry.date) : '')
+		const print = `<a href='${encodePath(deck.printPath)}' title="Print version"><img src="${printerSymbolUrl}" alt="Print"></a>`
+		const pdf = deck.pdf ? `<a href='${encodePath(deck.pdf)}' title="PDF"><img src="${pdfSymbolUrl}" alt="PDF"></a>` : ''
 		return `
-			<tr class="${isSubchapter ? "toc_tr_subchapter" : "toc_tr_chapter"}">
-				<td class="toc_no">${isSubchapter ? "" : (deck.number || "")}</td>
-				<td class="toc_sub_no">${deck.sub || ""}</td>
-				<td class="toc_title"><a href='${encodePath(deck.path)}'>${deck.title}</a></td>
-				<td class="toc_print">${printLink}</td>
-				<td class="toc_pdf">${pdfLink}</td>
-			</tr>`
-	}).join("")
+			<div class="toc_row ${isSub ? 'toc_row_sub' : 'toc_row_chapter'}${status}">
+				<span class="toc_no">${isSub ? deck.sub : (deck.number || '')}</span>
+				<a class="toc_title" href='${encodePath(deck.path)}'>${deck.title}</a>
+				<span class="toc_plan">${plan}</span>
+				<span class="toc_files">${print}${pdf}</span>
+			</div>`
+	}
 
-	const credits = toc.combinedPdf
-		? `<credits><a href='${encodePath(toc.combinedPdf)}'>All slides combined as PDF</a></credits>`
+	const columns = toc.decks.length > 10 ? ' toc_columns' : ''
+	const body = groups.map(g => `<div class="toc_group">${g.map(row).join('')}</div>`).join('')
+
+	// Footer: the combined PDF on the left, the legend of the course profile on the right
+	const combined = toc.combinedPdf
+		? `<a class="toc_combined" href='${encodePath(toc.combinedPdf)}'><img src="${pdfSymbolUrl}" alt="">All slides as one PDF</a>`
+		: '<span></span>'
+	const legend = profile
+		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip"></span>not covered in ${profile.title}<a href="${courseResetLink()}">full agenda</a></span>`
 		: ''
+	const footer = toc.combinedPdf || profile ? `<div class="toc_footer">${combined}${legend}</div>` : ''
 
-	return `<table class='toc_table'>${rows}</table>${credits}`
+	return `<div class="toc${columns}">${body}</div>${footer}`
 }
 
 function showToc(url, el) {
-	fetch(url, { "cache": "no-store", "credentials": "include" })
+	const tocPromise = fetch(url, { "cache": "no-store", "credentials": "include" })
 		.then(res => {
 			if (res.status === 401) {
 				console.log("Authentication required (show-toc), reloading page");
@@ -56,8 +78,9 @@ function showToc(url, el) {
 			}
 			return res.json();
 		})
-		.then(toc => {
-			if (toc) el.innerHTML = renderToc(toc)
+	Promise.all([tocPromise, loadCourseProfile()])
+		.then(([toc, profile]) => {
+			if (toc) el.innerHTML = renderToc(toc, profile)
 		})
 		.catch(e => console.log(`Unable to load TOC from ${url}`, e))
 }

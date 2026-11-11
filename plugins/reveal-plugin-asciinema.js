@@ -13,6 +13,8 @@ function initSlide(asciinemaCreate, slide) {
 		const div = document.createElement('div')
 
 		div.setAttribute('data-farberg-asciinema', 'true')
+		// Styles of the <asciinema> element (e.g. style="width: 90%") apply to the player
+		if (el.getAttribute('style')) div.setAttribute('style', el.getAttribute('style'))
 
 		players.push(asciinemaCreate(source, div, JSON.parse(conf)))
 

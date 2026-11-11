@@ -5,7 +5,7 @@
 
 	Vertical slides (separator vvv) are optional details below a slide of the main flow:
 	- The slide number counts only the main flow: "12 / 140" on a main slide, "12.2 / 140" on its second vertical slide
-	- A main slide with vertical slides below shows a red arrow and their number before the slide number ("↓3 12 / 140"); a click on it goes down
+	- A tab hangs from the top right corner of the window: red with the number of detail slides on a main slide that has vertical slides below ("↓ 3 details"), grey with the position on a vertical slide ("detail 2 / 3"); a click goes down (on the last vertical slide: back up to the main slide)
 	- Each vertical slide gets a thin red bar on its left edge
 	- The feedback button and the attribution move left only as far as the slide number needs (CSS variable --fb-right, default 66px)
 
@@ -15,7 +15,7 @@
 
 	Help ("?"): reveal renders it from its built-in list of default shortcuts plus the key bindings registered with a description. Overrides are not reflected there (e.g. the chalkboard takes B, which reveal still lists as "Pause"), and reveal does not expose that list, so the rendered table is corrected right after it opens.
 
-	Styles: .vertical-hint, .vertical-bar and .menubar li.sm-bracket in css/dhbw.css
+	Styles: .vertical-tab, .vertical-bar and .menubar li.sm-bracket in css/dhbw.css
  */
 
 const helpFixes = {
@@ -133,22 +133,34 @@ export default () => {
 				deck.configure({
 					slideNumber: (slide) => {
 						const { h, v } = deck.getIndices(slide)
-						const details = v === 0 ? detailsBelow(deck, h) : 0
-						const arrow = details > 0 ? `<span class="vertical-hint" title="${details} detail slide${details === 1 ? '' : 's'} below (arrow down)"><span class="arrow">↓</span>${details}</span>` : ''
-						return [v > 0 ? `${h + 1}.${v}` : `${arrow}${h + 1}`, ' / ', deck.getHorizontalSlides().length]
+						return [v > 0 ? `${h + 1}.${v}` : `${h + 1}`, ' / ', deck.getHorizontalSlides().length]
 					}
 				})
 
-				// The slide number is a link: a click on the arrow goes down instead
-				deck.getRevealElement().addEventListener('click', (event) => {
-					if (!event.target.closest('.slide-number .vertical-hint')) return
+				// Tab in the top right corner for the vertical slides of the current stack
+				const tab = document.createElement('button')
+				tab.className = 'vertical-tab'
+				tab.addEventListener('click', (event) => {
 					event.preventDefault()
 					event.stopPropagation()
-					deck.down()
-				}, true)
+					const { h, v } = deck.getIndices()
+					if (v < detailsBelow(deck, h)) deck.down()
+					else deck.slide(h, 0)
+				})
+				deck.getRevealElement().appendChild(tab)
+				const updateTab = () => {
+					const { h, v } = deck.getIndices()
+					const details = detailsBelow(deck, h)
+					tab.hidden = !(details > 0)
+					tab.classList.toggle('vertical-tab-inside', v > 0)
+					tab.innerHTML = v === 0 ? `<span class="arrow">↓</span> ${details} detail${details === 1 ? '' : 's'}` : `detail ${v} / ${details}`
+					tab.title = v === 0 ? 'Detail slides below (arrow down)' : (v < details ? 'Next detail slide (arrow down)' : 'Back to the main slide')
+				}
 
 				deck.on('slidechanged', placeStrip)
+				deck.on('slidechanged', updateTab)
 				placeStrip()
+				updateTab()
 				setTimeout(bracketMenuLevels)
 			})
 		}

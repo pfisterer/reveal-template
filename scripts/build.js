@@ -44,7 +44,7 @@ function lectureInfo(pkg) {
 function assetConfig(pkg) {
 	const farberg = pkg.farberg || {}
 	return {
-		assetDirs: farberg.assetDirs || ['img', 'code', 'data'],
+		assetDirs: farberg.assetDirs || ['img', 'code', 'data', 'profiles'],
 		assetExclude: farberg.assetExclude || []
 	}
 }
@@ -384,6 +384,8 @@ async function devServer() {
 		base: '/',
 		configFile: false,
 		appType: 'mpa',
+		// The template itself is pre-bundled as a dependency; Vite only invalidates that cache when the lockfile changes, so a changed or linked template would stay stale. Re-bundling on every start costs a few seconds.
+		optimizeDeps: { force: true },
 		server: { fs: { allow: [cwd, templateRealDir] } },
 		plugins: [injectSlidesPlugin(() => ({ decks, slides })), {
 			name: 'dennis-lecture-dev',
