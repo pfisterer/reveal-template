@@ -8,13 +8,14 @@
 		"decks": {
 			"03f": "prior",
 			"04a": { "status": "core", "date": "2026-11-18" },
+			"04d": { "status": "core", "sections": { "Access Control": "skip", "Supply Chain": "optional" } },
 			"04e": "skip",
 			"05b": { "status": "optional", "date": "2026-12-14" }
 		},
 		"exercises": { "<slide id of an exercise>": "optional" }
 	}
 
-	Deck keys are the number plus the sub letter of the deck ("04a", "05" for a chapter deck). Status: prior (prior knowledge), core (the default), optional, skip. Without a profile, nothing changes.
+	Deck keys are the number plus the sub letter of the deck ("04a", "05" for a chapter deck). Status: prior (prior knowledge), core (the default), optional, skip. "sections" in a deck entry marks parts of that deck by the data-name of their first slide (the name in the menu bar); a section ends at the next named slide of the same or a higher data-level. Skipped sections are removed from the presentation. Without a profile, nothing changes.
 	Used by reveal-plugin-show-toc.js (marks the agenda rows) and reveal-plugin-course-profile.js (badges on the title slide of a deck and on exercise slides).
  */
 

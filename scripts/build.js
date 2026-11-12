@@ -9,7 +9,7 @@
 //   dennis_build dev          Vite dev server with prod-identical routes
 //
 // Layout of dist/ (flat, pretty URLs without query strings):
-//   index.html                       redirect to the first deck (keeps #hash)
+//   index.html                       redirect to the first deck (keeps ?query and #hash, e.g. ?profile=)
 //   <slug>.html                      one page per markdown deck, markdown inlined
 //   <slug>-print.html                print variant (Reveal view: 'print')
 //   assets/                          hashed JS/CSS/fonts (Vite output)
@@ -145,7 +145,7 @@ function redirectHtml(firstSlug) {
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<script>location.replace('${firstSlug}' + location.hash)</script>
+	<script>location.replace('${firstSlug}' + location.search + location.hash)</script>
 	<meta http-equiv="refresh" content="0; url=${firstSlug}">
 </head>
 <body><a href="${firstSlug}">Continue to the slides</a></body>

@@ -61,7 +61,7 @@ function renderToc(toc, profile) {
 		? `<a class="toc_combined" href='${encodePath(toc.combinedPdf)}'><img src="${pdfSymbolUrl}" alt="">All slides as one PDF</a>`
 		: '<span></span>'
 	const legend = profile
-		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip"></span>not covered in ${profile.title}<a href="${courseResetLink()}">full agenda</a></span>`
+		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip">not covered</span> in ${profile.title}<a href="${courseResetLink()}">full agenda</a></span>`
 		: ''
 	const footer = toc.combinedPdf || profile ? `<div class="toc_footer">${combined}${legend}</div>` : ''
 

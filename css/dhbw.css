@@ -1263,9 +1263,15 @@ ul.dirtree ul ul ul li {
   color: #a3a9ad !important;
 }
 
+/* not covered: lighter than prior knowledge and struck through, so the two differ at a glance */
 .reveal .toc_course_skip .toc_title,
 .reveal .toc_course_skip .toc_no {
-  color: #cfd3d5 !important;
+  color: #c3c8cb !important;
+}
+
+.reveal .toc_course_skip .toc_title {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .reveal .toc_footer {
@@ -1304,7 +1310,16 @@ ul.dirtree ul ul ul li {
 }
 
 .reveal .toc_course_key_prior { background: #a3a9ad; }
-.reveal .toc_course_key_skip { background: #cfd3d5; }
+.reveal .toc_course_key_skip {
+  background: none;
+  width: auto;
+  height: auto;
+  color: #c3c8cb;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  margin-right: 0.25em;
+  vertical-align: baseline;
+}
 
 .reveal .toc_course_legend a {
   margin-left: 1.5em;
@@ -1444,6 +1459,17 @@ ul.dirtree ul ul ul li {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #a3a9ad;
+}
+
+/* Sections of a deck in a course profile (plugins/reveal-plugin-course-profile.js): menu items and chapter overview lines like the agenda rows */
+.menubar>ul li a.course_link_prior,
+.reveal ol.chapter-overview a.course_link_prior {
+  color: #a3a9ad !important;
+}
+
+.menubar>ul li a.course_link_optional,
+.reveal ol.chapter-overview a.course_link_optional {
+  font-style: italic;
 }
 
 .reveal .slides section.section_divider .course_badge {

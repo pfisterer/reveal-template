@@ -84,12 +84,14 @@ One lecture site can serve several courses with different agendas. A start link 
 ```json
 {
   "title": "WDSKI24",
-  "decks": { "03f": "prior", "04b": { "status": "core", "date": "2026-11-23" }, "04e": "skip", "05b": { "status": "optional", "date": "2026-12-14" } },
+  "decks": { "03f": "prior", "04b": { "status": "core", "date": "2026-11-23" }, "04d": { "status": "core", "sections": { "Access Control": "skip", "Supply Chain": "optional" } }, "04e": "skip", "05b": { "status": "optional", "date": "2026-12-14" } },
   "exercises": { "tilt": "optional", "keycloak": "skip" }
 }
 ```
 
 Deck keys are number plus sub letter (`04a`, `05` for a chapter deck), exercise keys are slide ids. Status: `prior` (prior knowledge), `core` (default), `optional`, `skip`. The agenda (`data-toc-src`) greys out prior knowledge, shows optional decks in italics, strikes skipped ones and adds a date column; title slides and listed exercise slides get a small badge. Without a profile nothing changes.
+
+`sections` in a deck entry restricts a deck to some of its parts: keys are the `data-name` of the first slide of a section (the name in the menu bar, numbered like `Exercise 2` when it occurs several times), a section ends at the next named slide of the same or a higher `data-level`. A section with `skip` is removed from the presentation (slides, menu item, chapter overview lines; slide numbers count without it). With `prior` or `optional` every slide of the section gets the badge, its menu item and its chapter overview lines are greyed out (`prior`) or set in italics (`optional`).
 
 The key `U` opens a picker with all profiles (the build lists `profiles/*.json` with their titles in `toc.json`) and "Full agenda"; choosing one sets it like a start link and reloads the page.
 
