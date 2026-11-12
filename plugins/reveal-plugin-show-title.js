@@ -22,8 +22,13 @@ function showTitle(deck, packageJson) {
 	let authors = packageJson.authors || []
 	let authorBlock = authors.map(entry => `<a href="${entry.homepage}"> ${entry.name}</a>`).join(", ")
 
+	// <div class="coursetitle"></div> alone is enough for the course title slide: it gets the title slide styles of .lecturetitle (its text is ignored)
+	for (const el of deck.getSlidesElement().querySelectorAll(".coursetitle:not(.lecturetitle)")) el.classList.add("lecturetitle")
+
 	for (let el of deck.getSlidesElement().getElementsByClassName("lecturetitle")) {
 		let slideTitle = el.innerText;
+		// Course title slide (<div class="coursetitle"></div>): only the lecture title and the lecturers, no chapter
+		const isCourse = el.classList.contains("coursetitle")
 
 		// Mark the enclosing slide so simplemenu hides on it (handled in dhbw.css
 		// via body.hide-menubar). Equivalent to writing in the markdown:
@@ -46,6 +51,17 @@ function showTitle(deck, packageJson) {
 		const configEl = document.getElementById('farberg-deck-config')
 		const meta = (configEl ? JSON.parse(configEl.textContent).deck : null) || {}
 		const number = meta.number ? `${meta.number}${meta.sub || ''}` : ''
+
+		if (isCourse) {
+			el.innerHTML = `
+				<div class="title_layout title_layout_course">
+					<h1 class="title_chapter title_course">${lectureTitle}</h1>
+					<div class="title_rule"></div>
+					<div class="title_course_authors">${authorBlock}</div>
+				</div>
+			`;
+			continue
+		}
 
 		el.innerHTML = `
 				<div class="title_layout">

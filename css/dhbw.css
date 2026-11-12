@@ -1380,6 +1380,31 @@ ul.dirtree ul ul ul li {
   color: #e2001a;
 }
 
+/* Course title slide (coursetitle): only the lecture title and the lecturers, vertically centered */
+.reveal .lecturetitle .title_layout_course {
+  justify-content: center;
+}
+
+.reveal .lecturetitle h1.title_course {
+  font-size: 2.1em;
+}
+
+.reveal .lecturetitle .title_course_authors {
+  margin-top: 1.1em;
+  font-size: 0.8em;
+  color: #4e565c;
+}
+
+.reveal .lecturetitle .title_course_authors a {
+  color: #4e565c;
+  font-weight: normal;
+  text-decoration: none;
+}
+
+.reveal .lecturetitle .title_course_authors a:hover {
+  color: #e2001a;
+}
+
 /* Content slides: lead lines (paragraphs directly in the slide) dark and semibold, so they rank above the bullets */
 .reveal .slides section > p {
   color: #464e53;
