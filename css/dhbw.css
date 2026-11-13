@@ -1300,6 +1300,15 @@ ul.dirtree ul ul ul li {
   vertical-align: -0.15em;
 }
 
+.reveal .toc_footer .toc_combined i {
+  margin: 0 0.4em 0 0;
+  font-size: 0.9em;
+}
+
+.reveal .toc_footer_links .toc_combined + .toc_combined {
+  margin-left: 1.5em;
+}
+
 .reveal .toc_course_key {
   display: inline-block;
   width: 0.75em;
@@ -1604,6 +1613,200 @@ ul.dirtree ul ul ul li {
   margin: 8px 10px 0;
   font-size: 13px;
   color: #8a9195;
+}
+
+/* Contents overlay (key I or ?contents, reveal-plugin-contents.js): the agenda with the sections of every deck as one quiet, scrollable page in the look of the agenda and the chapter overview */
+.contents_overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  background: #ffffff;
+  color: #33393d;
+  font-family: 'Nunito Sans Variable', Helvetica, sans-serif;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.contents_box {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 40px 64px;
+  outline: none;
+}
+
+.contents_box a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.contents_box a:hover {
+  color: #e2001a;
+}
+
+.contents_head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 36px 0 14px;
+  margin-bottom: 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.contents_kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a9195;
+}
+
+.contents_title {
+  margin-top: 2px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #e2001a;
+}
+
+.contents_course {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7378;
+}
+
+.contents_key {
+  margin-left: 14px;
+}
+
+.contents_course a {
+  margin-left: 14px;
+  color: #8a9195;
+  text-decoration: underline;
+  text-decoration-color: #c5c9cc;
+}
+
+.contents_close {
+  position: absolute;
+  top: 30px;
+  right: -8px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: #a3a9ad;
+  cursor: pointer;
+}
+
+.contents_close:hover {
+  color: #33393d;
+}
+
+/* One group per chapter, hairline between the groups like the agenda */
+.contents_group {
+  padding: 14px 0 10px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.contents_group:last-child {
+  border-bottom: none;
+}
+
+.contents_deck {
+  display: grid;
+  grid-template-columns: 3em 1fr;
+  column-gap: 0.4em;
+  align-items: baseline;
+  padding: 5px 0;
+}
+
+.contents_no {
+  font-size: 0.9em;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  color: #8a9195;
+}
+
+.contents_chapter .contents_no {
+  color: #e2001a;
+}
+
+.contents_deck_title {
+  font-weight: 600;
+}
+
+.contents_chapter .contents_deck_title {
+  font-size: 1.12em;
+  font-weight: 700;
+}
+
+/* Sections: level-1 titles in regular weight, the note and the level-2 sections as small grey lines with a short hairline in front, like the chapter overview */
+.contents_sections {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contents_sections > li {
+  padding: 2px 0;
+  font-size: 0.95em;
+}
+
+.contents_sub {
+  font-size: 0.78em;
+  color: #8a9096;
+}
+
+.contents_sub > div {
+  position: relative;
+  padding: 1px 0 1px 0.9em;
+}
+
+.contents_sub > div::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.75em;
+  width: 0.45em;
+  border-top: 1px solid #c5c9cc;
+}
+
+.contents_status {
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a3a9ad;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Course profile: prior knowledge greyed out, optional in italics, not covered lighter and struck through */
+.contents_box .contents_prior,
+.contents_box .contents_prior :is(.contents_no, .contents_sub) {
+  color: #a3a9ad;
+}
+
+.contents_box .contents_optional > :is(a, span):first-child,
+.contents_box .contents_optional > .contents_body > .contents_deck_title > a,
+.contents_key.contents_optional {
+  font-style: italic;
+}
+
+.contents_box .contents_skip,
+.contents_box .contents_skip :is(.contents_no, .contents_sub) {
+  color: #c3c8cb;
+}
+
+.contents_box .contents_skip > span:first-child,
+.contents_box .contents_skip > .contents_body > .contents_deck_title > a,
+.contents_key.contents_skip {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 /* Terminal recordings (reveal-plugin-asciinema.js): quiet frame like the code blocks */

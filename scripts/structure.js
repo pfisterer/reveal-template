@@ -144,4 +144,24 @@ function addStructure(container, { file, root, assetExclude } = {}) {
 	numberDuplicateNames(container)
 }
 
-module.exports = { addStructure }
+// Sections of a deck for the contents overlay (toc.json, reveal-plugin-contents.js): every slide with data-name or data-summary, in slide order, with its position. Runs after numberDuplicateNames so the names match the menu and the course profile.
+function collectSections(container) {
+	const sections = []
+	;[...container.children].filter(c => c.tagName === 'SECTION').forEach((top, h) => {
+		const inner = [...top.children].filter(c => c.tagName === 'SECTION')
+		const slides = inner.length ? inner.map((s, v) => [s, v]) : [[top, 0]]
+		for (const [slide, v] of slides) {
+			const name = slide.getAttribute('data-name')
+			const summary = slide.getAttribute('data-summary')
+			if (!name && !summary) continue
+			const level = Math.max(1, parseInt(slide.getAttribute('data-level') || '1', 10) || 1)
+			const entry = { level, h, v }
+			if (name) entry.name = name
+			if (summary) entry.summary = summary
+			sections.push(entry)
+		}
+	})
+	return sections
+}
+
+module.exports = { addStructure, collectSections }

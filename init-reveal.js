@@ -14,6 +14,7 @@ import QuickNavPlugin from './plugins/reveal-plugin-quick-nav.js';
 import FeedbackPlugin from './plugins/reveal-plugin-feedback.js';
 import NavigationPlugin from './plugins/reveal-plugin-navigation.js';
 import CourseProfilePlugin from './plugins/reveal-plugin-course-profile.js';
+import ContentsPlugin from './plugins/reveal-plugin-contents.js';
 
 // Stylesheets — bundled and minified by Vite into a single hashed CSS file;
 // font url()s inside them are hashed automatically. Specifiers must match the
@@ -250,7 +251,8 @@ function buildDennisPlugins(deps) {
 		QuickNavPlugin,
 		FeedbackPlugin,
 		NavigationPlugin,
-		CourseProfilePlugin
+		CourseProfilePlugin,
+		ContentsPlugin
 	]
 }
 

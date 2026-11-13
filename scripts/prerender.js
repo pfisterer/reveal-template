@@ -3,7 +3,7 @@
 // the resulting <section> HTML is identical to what runtime parsing produced.
 
 const { JSDOM } = require('jsdom')
-const { addStructure } = require('./structure')
+const { addStructure, collectSections } = require('./structure')
 
 // The reveal markdown plugin un-escapes this sentinel back to </script> when
 // reading inline templates (constant Q in dist/plugin/markdown.mjs).
@@ -57,7 +57,7 @@ async function prerenderDeck(md, { file, markdownConfig, codeFiles }) {
 			getConfig: () => ({ markdown: markdownConfig })
 		})
 		addStructure(container, Object.assign({ file }, codeFiles))
-		return { slidesHtml: container.innerHTML }
+		return { slidesHtml: container.innerHTML, sections: collectSections(container) }
 	} finally {
 		if (prevNode === undefined) delete globalThis.Node
 		else globalThis.Node = prevNode

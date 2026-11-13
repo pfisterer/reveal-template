@@ -13,7 +13,7 @@
 
 	<div data-toc-src="toc.json" style="font-size: 0.82em;" />
 
-	With a course profile (course-profile.js, start link ?profile=<id>), prior knowledge and skipped decks are muted, an extra column shows the date or "optional", and a legend below the table links to the full agenda.
+	With a course profile (course-profile.js, start link ?profile=<id>), prior knowledge and skipped decks are muted, an extra column shows the date or "optional", and a legend below the table links to the full agenda. The footer links to the combined PDF (if there is one) and opens the contents overlay (reveal-plugin-contents.js).
  */
 
 import { loadCourseProfile, courseEntry, formatCourseDate, courseResetLink } from './course-profile.js'
@@ -56,14 +56,15 @@ function renderToc(toc, profile) {
 	const columns = toc.decks.length > 10 ? ' toc_columns' : ''
 	const body = groups.map(g => `<div class="toc_group">${g.map(row).join('')}</div>`).join('')
 
-	// Footer: the combined PDF on the left, the legend of the course profile on the right
+	// Footer: the combined PDF and the contents overlay (reveal-plugin-contents.js, also key I) on the left, the legend of the course profile on the right
 	const combined = toc.combinedPdf
 		? `<a class="toc_combined" href='${encodePath(toc.combinedPdf)}'><img src="${pdfSymbolUrl}" alt="">All slides as one PDF</a>`
-		: '<span></span>'
+		: ''
+	const contents = `<a class="toc_combined" href="?contents" data-open-contents title="Contents of all chapters (key I)"><i class="fa-solid fa-list-ul" aria-hidden="true"></i>Contents of all chapters</a>`
 	const legend = profile
 		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip">not covered</span> in ${profile.title}<a href="${courseResetLink()}">full agenda</a></span>`
 		: ''
-	const footer = toc.combinedPdf || profile ? `<div class="toc_footer">${combined}${legend}</div>` : ''
+	const footer = `<div class="toc_footer"><span class="toc_footer_links">${combined}${contents}</span>${legend}</div>`
 
 	return `<div class="toc${columns}">${body}</div>${footer}`
 }

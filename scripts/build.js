@@ -106,14 +106,15 @@ function deckHtml(template, { deck, info, view }) {
 }
 
 // Prerender every deck's markdown once (shared by presentation + print page).
-// Returns Map(slug -> slidesHtml).
+// Returns Map(slug -> slidesHtml); the sections of each deck (for toc.json) are stored on the deck object.
 async function prerenderDecks(decks, pkg) {
 	const markdownConfig = Object.assign({ smartypants: true }, (pkg.farberg || {}).markdown)
 	const slides = new Map()
 	for (const deck of decks) {
 		const md = fs.readFileSync(path.join(cwd, deck.file), 'utf8')
-		const { slidesHtml } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles: { root: cwd, assetExclude: assetConfig(pkg).assetExclude } })
+		const { slidesHtml, sections } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles: { root: cwd, assetExclude: assetConfig(pkg).assetExclude } })
 		slides.set(deck.slug, slidesHtml)
+		deck.sections = sections
 	}
 	return slides
 }
@@ -216,6 +217,7 @@ function buildToc(decks, pkg) {
 			slug: d.slug,
 			path: d.path,
 			printPath: d.printPath,
+			sections: d.sections || [],
 			pdf: pdf_exists_and_is_newer_than_markdown(path.join(cwd, d.file), path.join(pdfDir, `${d.slug}.pdf`), false)
 				? `pdfs/${d.slug}.pdf`
 				: null
@@ -330,6 +332,11 @@ function tocOnly() {
 		console.error('Error: dist/ does not exist, run a full build first')
 		process.exit(1)
 	}
+	// The sections come from prerendering: keep the ones of the last full build
+	try {
+		const old = JSON.parse(fs.readFileSync(path.join(distDir, 'toc.json'), 'utf8'))
+		for (const d of decks) d.sections = ((old.decks || []).find(o => o.slug === d.slug) || {}).sections
+	} catch (e) { }
 	writeTocJson(decks, pkg)
 	console.log('toc.json updated.')
 }
