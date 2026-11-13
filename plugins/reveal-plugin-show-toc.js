@@ -53,18 +53,30 @@ function renderToc(toc, profile) {
 			</div>`
 	}
 
-	const columns = toc.decks.length > 10 ? ' toc_columns' : ''
-	const body = groups.map(g => `<div class="toc_group">${g.map(row).join('')}</div>`).join('')
+	// With more than 10 entries the chapters go into two columns, split where both have about the same number of rows; the first group of each column has no line above it (the slide title already has one)
+	const group = g => `<div class="toc_group">${g.map(row).join('')}</div>`
+	let body = groups.map(group).join('')
+	let columns = ''
+	if (toc.decks.length > 10 && groups.length > 1) {
+		let best = 1, bestDiff = Infinity, left = 0
+		for (let i = 1; i < groups.length; i++) {
+			left += groups[i - 1].length
+			const diff = Math.abs(2 * left - toc.decks.length)
+			if (diff < bestDiff) { best = i; bestDiff = diff }
+		}
+		body = `<div class="toc_col">${groups.slice(0, best).map(group).join('')}</div><div class="toc_col">${groups.slice(best).map(group).join('')}</div>`
+		columns = ' toc_columns'
+	}
 
-	// Footer: the combined PDF and the contents overlay (reveal-plugin-contents.js, also key I) on the left, the legend of the course profile on the right
+	// Footer: the contents overlay (reveal-plugin-contents.js, also key I) and the combined PDF on the left, the legend of the course profile on the right
 	const combined = toc.combinedPdf
 		? `<a class="toc_combined" href='${encodePath(toc.combinedPdf)}'><img src="${pdfSymbolUrl}" alt="">All slides as one PDF</a>`
 		: ''
 	const contents = `<a class="toc_combined" href="?contents" data-open-contents title="Contents of all chapters (key I)"><i class="fa-solid fa-list-ul" aria-hidden="true"></i>Contents of all chapters</a>`
 	const legend = profile
-		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip">not covered</span> in ${profile.title}<a href="${courseResetLink()}">full agenda</a></span>`
+		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip">not covered</span><a href="${courseResetLink()}">full agenda</a></span>`
 		: ''
-	const footer = `<div class="toc_footer"><span class="toc_footer_links">${combined}${contents}</span>${legend}</div>`
+	const footer = `<div class="toc_footer"><span class="toc_footer_links">${contents}${combined}</span>${legend}</div>`
 
 	return `<div class="toc${columns}">${body}</div>${footer}`
 }

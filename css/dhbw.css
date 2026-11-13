@@ -1173,8 +1173,17 @@ ul.dirtree ul ul ul li {
 }
 
 .reveal .toc_columns {
-  column-count: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   column-gap: 1.6em;
+  align-items: start;
+}
+
+/* the slide title has a line already: no second one above the first chapter (of each column) */
+.reveal .toc > .toc_group:first-child,
+.reveal .toc_col > .toc_group:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 
 .reveal .toc_group {
