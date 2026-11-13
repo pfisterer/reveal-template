@@ -437,6 +437,13 @@ comment a {
   opacity: 1 !important;
 }
 
+/* Links in comments keep the grey of the comment */
+.reveal comment a,
+.reveal comment a:visited,
+.reveal comment a:hover {
+  color: inherit;
+}
+
 right50transparentbox {
   border-radius: 10px;
   position: absolute;
