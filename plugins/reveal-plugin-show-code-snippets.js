@@ -60,7 +60,7 @@ function showCode(el, language, code, link, outdent) {
 	return newEl
 }
 
-function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth, includeMarkers) {
+function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth, includeMarkers, keepIndent) {
 	let lines = code.split('\n');
 	let out = "";
 	beginMarker = beginMarker ? beginMarker.trim() : null
@@ -95,7 +95,8 @@ function extractBeginEndSnippet(code, beginMarker, endMarker, beginNth, includeM
 		out += line + "\n";
 	}
 
-	return out.trim();
+	// keepIndent (data-outdent): drop only surrounding empty lines, so that outdent sees the indentation of the first line too
+	return keepIndent ? out.replace(/^(\s*\n)+/, '').trimEnd() : out.trim();
 }
 
 function injectStyles() {
@@ -420,7 +421,7 @@ export default () => {
 							continue
 						}
 						const text = await response.text()
-						let code = extractBeginEndSnippet(text, beginMarker, endMarker, beginNth, includeMarkers)
+						let code = extractBeginEndSnippet(text, beginMarker, endMarker, beginNth, includeMarkers, outdentCode)
 
 						if (!code) {
 							showError(el, `No content extracted from ${url} (begin=${beginMarker}, end=${endMarker})`)
