@@ -164,4 +164,34 @@ function collectSections(container) {
 	return sections
 }
 
-module.exports = { addStructure, collectSections }
+// Search documents of a deck (search.json, plugins/search-core.js): one per slide with its position, title, section, and visible text. Code blocks (filled in at runtime anyway), notes, credits, and embedded players are left out, inline code stays. Also marks every slide with data-pos="h/v", so a search hit can be found again after a course profile removed sections.
+const SEARCH_SKIP = 'pre, aside.notes, credits, script, style, svg, asciinema, a[data-code], .chapter-overview'
+const SEARCH_TEXT_MAX = 1500
+function collectSearchDocs(container) {
+	const docs = []
+	let section = ''
+	;[...container.children].filter(c => c.tagName === 'SECTION').forEach((top, h) => {
+		const inner = [...top.children].filter(c => c.tagName === 'SECTION')
+		const slides = inner.length ? inner.map((s, v) => [s, v]) : [[top, 0]]
+		for (const [slide, v] of slides) {
+			slide.setAttribute('data-pos', `${h}/${v}`)
+			const level = parseInt(slide.getAttribute('data-level') || '1', 10) || 1
+			const name = slide.getAttribute('data-name')
+			if (name && level === 1) section = name
+			const heading = slide.querySelector('h1, h2')
+			const title = heading ? heading.textContent.replace(/\s+/g, ' ').trim() : ''
+			const clone = slide.cloneNode(true)
+			for (const el of clone.querySelectorAll(SEARCH_SKIP)) el.remove()
+			const first = clone.querySelector('h1, h2')
+			if (first) first.remove()
+			// line breaks between block elements, so words of adjacent bullets do not run together
+			for (const el of clone.querySelectorAll('li, p, td, th, h3, h4, div, br')) el.insertAdjacentText('afterend', ' ')
+			const text = clone.textContent.replace(/\s+/g, ' ').trim().slice(0, SEARCH_TEXT_MAX)
+			if (!title && !text) continue
+			docs.push({ h, v, t: title, s: section, x: text })
+		}
+	})
+	return docs
+}
+
+module.exports = { addStructure, collectSections, collectSearchDocs }

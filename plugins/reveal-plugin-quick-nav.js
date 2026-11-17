@@ -8,7 +8,14 @@
 
 	The list is rendered in multiple columns so 30-60 slides with headings
 	can be scanned at a glance.
+
+	Typing filters with the shared full-text search (search-core.js, the same
+	matching as the search over all decks in the contents overlay, key I); the
+	list keeps the slide order. A link below the list continues the search over
+	all decks.
  */
+
+import { fromDeck, createSearch, searchHelpHtml } from './search-core.js'
 
 function collectHeadings(deck) {
 	const items = []
@@ -29,14 +36,12 @@ function collectHeadings(deck) {
 function extractFromSection(section, h, v, items) {
 	const headings = section.querySelectorAll('h1, h2')
 	if (headings.length === 0) return
-	const slideText = (section.innerText || section.textContent || '').toLowerCase()
 	headings.forEach(heading => {
 		const text = heading.textContent.trim()
 		if (!text) return
 		items.push({
 			text,
 			level: heading.tagName.toLowerCase(),
-			searchText: slideText,
 			h,
 			v
 		})
@@ -160,6 +165,19 @@ function injectStyles() {
 			padding-left: 16px;
 			color: #444;
 		}
+		#quick-nav-overlay .quick-nav-footer {
+			padding: 8px 16px;
+			border-top: 1px solid #e0e0e0;
+			background: #f7f7f7;
+			font-size: 12px;
+			color: #888;
+		}
+		#quick-nav-overlay .quick-nav-footer a {
+			color: #555;
+			text-decoration: underline;
+			text-decoration-color: #ccc;
+		}
+		#quick-nav-overlay .quick-nav-footer a:hover { color: #e2001a; }
 		#quick-nav-overlay .quick-nav-empty {
 			padding: 20px;
 			color: #888;
@@ -182,10 +200,12 @@ function buildOverlay(deck) {
 			<div class="quick-nav-header">
 				<span class="quick-nav-title">Quick Nav</span>
 				<input type="text" class="quick-nav-search" placeholder="Full-text search…" autocomplete="off" spellcheck="false" />
+				${searchHelpHtml()}
 				<span class="quick-nav-count"></span>
 				<button class="quick-nav-close" title="Close (Esc / q)">×</button>
 			</div>
 			<div class="quick-nav-list"></div>
+			<div class="quick-nav-footer"><a href="?contents" data-open-contents>Search all chapters (key I)</a></div>
 		</div>
 	`
 	document.body.appendChild(overlay)
@@ -195,11 +215,14 @@ function buildOverlay(deck) {
 	const list = overlay.querySelector('.quick-nav-list')
 	const count = overlay.querySelector('.quick-nav-count')
 	const closeBtn = overlay.querySelector('.quick-nav-close')
+	const allLink = overlay.querySelector('.quick-nav-footer a')
 
 	let allItems = []
 	let filtered = []
 	let activeIndex = -1
 	let currentIndices = { h: 0, v: 0 }
+	let searchPromise = null
+	let searchRun = 0
 
 	function render() {
 		list.innerHTML = ''
@@ -226,12 +249,18 @@ function buildOverlay(deck) {
 		count.textContent = `${filtered.length} / ${allItems.length}`
 	}
 
-	function applyFilter() {
-		const q = input.value.toLowerCase().trim()
+	// Matching slides from the shared search, shown in slide order; a newer input wins over a slower older one
+	async function applyFilter() {
+		const q = input.value.trim()
+		allLink.setAttribute('data-contents-query', q)
+		const run = ++searchRun
 		if (q === '') {
 			filtered = allItems
 		} else {
-			filtered = allItems.filter(i => i.searchText.includes(q))
+			const search = await searchPromise
+			const hits = new Set((await search(q, 1000)).map(d => `${d.h}/${d.v}`))
+			if (run !== searchRun) return
+			filtered = allItems.filter(i => hits.has(`${i.h}/${i.v}`))
 		}
 		activeIndex = filtered.length > 0 ? 0 : -1
 		render()
@@ -244,8 +273,10 @@ function buildOverlay(deck) {
 
 	function show() {
 		allItems = collectHeadings(deck)
+		searchPromise = createSearch(fromDeck(deck))
 		filtered = allItems
 		input.value = ''
+		allLink.setAttribute('data-contents-query', '')
 		currentIndices = deck.getIndices()
 		const currentIdx = filtered.findIndex(i => i.h === currentIndices.h && i.v === currentIndices.v)
 		activeIndex = currentIdx >= 0 ? currentIdx : (filtered.length > 0 ? 0 : -1)
@@ -270,6 +301,7 @@ function buildOverlay(deck) {
 
 	input.addEventListener('input', applyFilter)
 	closeBtn.addEventListener('click', hide)
+	allLink.addEventListener('click', () => hide())
 	overlay.addEventListener('click', e => {
 		if (e.target === overlay) hide()
 	})

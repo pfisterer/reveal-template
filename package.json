@@ -1,6 +1,6 @@
 {
   "name": "@farberg/reveal-template",
-  "version": "2.7.12",
+  "version": "2.7.13",
   "homepage": "https://github.com/pfisterer/reveal-template",
   "description": "Reveal.js template for Dennis' lectures",
   "main": "init-reveal.js",
@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.3.0",
     "@fortawesome/fontawesome-free": "^7.3.1",
+    "@orama/orama": "^3.1.18",
     "asciinema-player": "^3.18.0",
     "connect": "^3.7.0",
     "fflate": "^0.8.3",

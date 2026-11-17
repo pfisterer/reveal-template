@@ -14,6 +14,7 @@
 //   <slug>-print.html                print variant (Reveal view: 'print')
 //   assets/                          hashed JS/CSS/fonts (Vite output)
 //   toc.json                         machine-readable table of contents
+//   search.json                      slide texts for the full-text search (key I)
 //   img/ code/ data/                 copied as-is (mtimes preserved for rsync)
 //   pdfs/                            filled by CI (Gotenberg), referenced in toc.json
 
@@ -112,9 +113,10 @@ async function prerenderDecks(decks, pkg) {
 	const slides = new Map()
 	for (const deck of decks) {
 		const md = fs.readFileSync(path.join(cwd, deck.file), 'utf8')
-		const { slidesHtml, sections } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles: { root: cwd, assetExclude: assetConfig(pkg).assetExclude } })
+		const { slidesHtml, sections, searchDocs } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles: { root: cwd, assetExclude: assetConfig(pkg).assetExclude } })
 		slides.set(deck.slug, slidesHtml)
 		deck.sections = sections
+		deck.searchDocs = searchDocs
 	}
 	return slides
 }
@@ -184,6 +186,7 @@ async function generateStaging(decks, pkg) {
 
 	// toc.json also goes into staging so the dev server can serve it
 	fs.writeFileSync(path.join(stagingDir, 'toc.json'), JSON.stringify(buildToc(decks, pkg), null, '\t'))
+	writeSearchJson(decks, stagingDir)
 
 	return { decks, slides }
 }
@@ -223,6 +226,19 @@ function buildToc(decks, pkg) {
 				: null
 		}))
 	}
+}
+
+// Full-text search over all decks (plugins/search-core.js, key I): the slides of every deck as plain documents; the index itself is built in the browser
+function buildSearch(decks) {
+	return {
+		version: 1,
+		decks: decks.map(d => ({ slug: d.slug, path: d.path, number: d.number, sub: d.sub, title: d.title })),
+		docs: decks.flatMap((d, i) => (d.searchDocs || []).map(doc => Object.assign({ d: i }, doc)))
+	}
+}
+
+function writeSearchJson(decks, dir) {
+	fs.writeFileSync(path.join(dir, 'search.json'), JSON.stringify(buildSearch(decks)))
 }
 
 function writeTocJson(decks, pkg) {
@@ -322,6 +338,7 @@ async function fullBuild() {
 	await minifyDistHtml()
 	copyStaticAssets(pkg)
 	writeTocJson(decks, pkg)
+	writeSearchJson(decks, distDir)
 	console.log('Build done.')
 }
 

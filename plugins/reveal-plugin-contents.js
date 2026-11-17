@@ -4,9 +4,11 @@
 	It covers the whole window like a page; key I opens and closes it, Escape or the close button closes it. ?contents in the URL opens it on load, also together with a course profile (e.g. index.html?profile=<id>&contents; the start page keeps the query when it redirects).
 	With a course profile (course-profile.js), decks and sections follow its status like the agenda and the menu: prior knowledge greyed out, optional in italics, skipped struck through (skipped decks without their sections).
 	Every line links to its slide; links into the current deck jump there directly (skipped sections are removed from the deck, so slide numbers can differ from toc.json).
+	The search field above searches the text of all slides (search.json, search-core.js); while it is not empty, the hits replace the outline, grouped by deck in the order of the lecture. Skipped decks and sections of the course profile are left out. ?contents=<term> opens the overlay with a search; the quick navigation (key Q) hands its term over the same way.
  */
 
 import { loadCourseProfile, courseEntry, courseResetLink } from './course-profile.js'
+import { fromIndex, createSearch, searchHelpHtml, highlight, snippet, goTo, resumePendingJump } from './search-core.js'
 
 // Encode a relative path per segment
 function encodePath(p) {
@@ -103,26 +105,84 @@ function render(toc, profile) {
 		</div>`
 	}
 
-	const body = groups.map(g => `<div class="contents_group">${[g.chapter ? deckBlock(g.chapter, true) : '', ...g.decks.map(d => deckBlock(d, false))].join('')}</div>`).join('')
+	const outline = groups.map(g => `<div class="contents_group">${[g.chapter ? deckBlock(g.chapter, true) : '', ...g.decks.map(d => deckBlock(d, false))].join('')}</div>`).join('')
 	const course = profile
 		? `<div class="contents_course">${escapeHtml(profile.title)}<span class="contents_key contents_prior">prior knowledge</span><span class="contents_key contents_optional">optional</span><span class="contents_key contents_skip">not covered</span><a href="${courseResetLink()}">full contents</a></div>`
 		: ''
-	return `<div class="contents_head"><div class="contents_kicker">Contents</div><div class="contents_title">${escapeHtml(toc.title || '')}</div>${course}<button type="button" class="contents_close" title="Close (I or Esc)">&times;</button></div>${body}`
+	const search = '<input type="search" class="contents_search" placeholder="Search all slides" autocomplete="off" spellcheck="false" aria-label="Search all slides">'
+	return { head: `<div class="contents_head"><div class="contents_topline"><div class="contents_kicker">Contents</div><span class="contents_searchbox">${search}${searchHelpHtml()}</span></div><div class="contents_title">${escapeHtml(toc.title || '')}</div>${course}<button type="button" class="contents_close" title="Close (Esc)">&times;</button></div>`, outline }
+}
+
+// Documents of search.json that the course profile shows: no skipped decks, no skipped sections
+function visibleDocs(index, toc, profile) {
+	if (!profile) return index.docs
+	const hidden = new Map()
+	for (const deck of toc.decks) {
+		const entry = courseEntry(profile, 'decks', (deck.number || '') + (deck.sub || ''))
+		const marks = sectionStatus(deck.sections || [], entry.sections)
+		hidden.set(deck.slug, h => entry.status === 'skip' || marks.get(h) === 'skip')
+	}
+	return index.docs.filter(d => !(hidden.get(d.slug) || (() => false))(d.h))
+}
+
+// Hits grouped by deck in the order of the lecture, slides in their order within a deck
+function renderHits(hits, term, toc) {
+	if (hits.length === 0) return `<div class="contents_hits_none">No slides match "${escapeHtml(term)}"</div>`
+	const order = new Map(toc.decks.map((d, i) => [d.slug, i]))
+	const bySlug = new Map()
+	for (const hit of hits) {
+		if (!bySlug.has(hit.slug)) bySlug.set(hit.slug, [])
+		bySlug.get(hit.slug).push(hit)
+	}
+	const decks = [...bySlug.keys()].sort((a, b) => (order.get(a) ?? 1e9) - (order.get(b) ?? 1e9))
+	let n = 0
+	const groups = decks.map(slug => {
+		const deck = toc.decks[order.get(slug)] || { title: slug }
+		const no = deck.sub ? `${deck.number}${deck.sub}` : (deck.number || '')
+		const items = bySlug.get(slug).sort((a, b) => a.h - b.h || a.v - b.v).map(hit => {
+			const where = hit.section && hit.section !== hit.title ? `<span class="contents_hit_section">${escapeHtml(hit.section)}</span>` : ''
+			return `<a class="contents_hit" href="${encodePath(hit.path || slug)}#/${hit.h}/${hit.v}" data-hit="${n++}"><span class="contents_hit_title">${highlight(hit.title || '(untitled slide)', term)}</span>${where}<span class="contents_hit_text">${snippet(hit.text, term)}</span></a>`
+		}).join('')
+		return `<div class="contents_deck contents_hits_deck"><div class="contents_no">${escapeHtml(no)}</div><div class="contents_body"><div class="contents_deck_title">${escapeHtml(deck.title)}</div>${items}</div></div>`
+	})
+	const count = `<div class="contents_hits_count">${hits.length} slide${hits.length === 1 ? '' : 's'}</div>`
+	return count + groups.join('')
 }
 
 export default () => {
 	let overlay = null
 	let onKey = null
+	let hits = []
+	let active = -1
+	let setQuery = () => { }
+
+	const hitLinks = () => overlay ? [...overlay.querySelectorAll('a[data-hit]')] : []
+
+	// Arrow keys: mark the next or previous hit and keep it in view
+	function moveActive(step) {
+		const links = hitLinks()
+		if (!links.length) return
+		if (links[active]) links[active].classList.remove('contents_hit_active')
+		active = (active + step + links.length) % links.length
+		links[active].classList.add('contents_hit_active')
+		links[active].scrollIntoView({ block: 'nearest' })
+	}
 
 	function close() {
 		if (!overlay) return
 		overlay.remove()
 		overlay = null
+		hits = []
+		active = -1
+		setQuery = () => { }
 		document.removeEventListener('keydown', onKey, true)
 	}
 
-	function open(deck) {
-		if (overlay) return
+	function open(deck, query = '') {
+		if (overlay) {
+			if (query) setQuery(query)
+			return
+		}
 		overlay = document.createElement('div')
 		overlay.className = 'contents_overlay'
 		const box = document.createElement('div')
@@ -133,10 +193,17 @@ export default () => {
 		document.body.appendChild(overlay)
 		box.focus()
 
-		// While open, keys scroll the overlay instead of changing slides; I and Escape close it
+		// While open, keys scroll the overlay instead of changing slides; Escape closes it, I as well unless the search field has the focus; arrow keys and Enter move through the hits
 		onKey = e => {
-			if (e.key === 'Escape' || e.key === 'i' || e.key === 'I') {
+			const inSearch = e.target && e.target.classList && e.target.classList.contains('contents_search')
+			if (e.key === 'Escape' || (!inSearch && (e.key === 'i' || e.key === 'I'))) {
 				close()
+				e.preventDefault()
+			} else if (hitLinks().length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+				moveActive(e.key === 'ArrowDown' ? 1 : -1)
+				e.preventDefault()
+			} else if (e.key === 'Enter' && inSearch && hitLinks().length) {
+				hitLinks()[Math.max(0, active)].click()
 				e.preventDefault()
 			}
 			e.stopPropagation()
@@ -144,6 +211,14 @@ export default () => {
 		document.addEventListener('keydown', onKey, true)
 		overlay.addEventListener('click', e => {
 			if (e.target.closest('.contents_close')) return close()
+			const hit = e.target.closest('a[data-hit]')
+			if (hit && hits[+hit.getAttribute('data-hit')]) {
+				e.preventDefault()
+				const doc = hits[+hit.getAttribute('data-hit')]
+				close()
+				goTo(deck, doc)
+				return
+			}
 			// Links into the current deck: jump to the slide (its index may have changed through the course profile)
 			const a = e.target.closest('a[data-contents-deck]')
 			const page = (deck.getConfig().farberg_reveal_template || {}).deck || {}
@@ -162,7 +237,46 @@ export default () => {
 			loadCourseProfile()
 		]).then(([toc, profile]) => {
 			if (!overlay) return
-			box.innerHTML = toc ? render(toc, profile) : 'Contents not available (toc.json missing)'
+			if (!toc) {
+				box.textContent = 'Contents not available (toc.json missing)'
+				return
+			}
+			const { head, outline } = render(toc, profile)
+			box.innerHTML = `${head}<div class="contents_main">${outline}</div>`
+			const input = box.querySelector('.contents_search')
+			const main = box.querySelector('.contents_main')
+			// The index is built on the first search only
+			let searchFn = null
+			const getSearch = () => searchFn || (searchFn = fromIndex().then(index => index ? createSearch(visibleDocs(index, toc, profile)).then(search => ({ search, index })) : null))
+			let run = 0
+			input.addEventListener('input', async () => {
+				const term = input.value.trim()
+				const mine = ++run
+				if (!term) {
+					hits = []
+					main.innerHTML = outline
+					return
+				}
+				const ready = await getSearch()
+				if (mine !== run || !overlay) return
+				if (!ready) {
+					main.innerHTML = '<div class="contents_hits_none">Search not available (search.json missing)</div>'
+					return
+				}
+				hits = await ready.search(term, 300)
+				if (mine !== run || !overlay) return
+				main.innerHTML = renderHits(hits, term, toc)
+				// data-hit numbers follow the rendered order (grouped by deck), so hits is reordered the same way
+				const order = new Map(toc.decks.map((d, i) => [d.slug, i]))
+				hits.sort((a, b) => (order.get(a.slug) ?? 1e9) - (order.get(b.slug) ?? 1e9) || a.h - b.h || a.v - b.v)
+				active = -1
+			})
+			setQuery = q => {
+				input.value = q
+				input.dispatchEvent(new Event('input'))
+			}
+			if (query) setQuery(query)
+			input.focus()
 		})
 	}
 
@@ -173,12 +287,16 @@ export default () => {
 			deck.addKeyBinding({ keyCode: 73, key: 'I', description: 'Contents of the lecture (all chapters and sections)' }, () => overlay ? close() : open(deck))
 			// Links with data-open-contents (e.g. in the agenda footer, reveal-plugin-show-toc.js) open the overlay without reloading
 			document.addEventListener('click', e => {
-				if (!e.target.closest || !e.target.closest('[data-open-contents]')) return
+				const link = e.target.closest && e.target.closest('[data-open-contents]')
+				if (!link) return
 				e.preventDefault()
-				open(deck)
+				open(deck, link.getAttribute('data-contents-query') || '')
 			})
 			deck.on('ready', () => {
-				if (new URLSearchParams(window.location.search).has('contents')) open(deck)
+				const params = new URLSearchParams(window.location.search)
+				if (params.has('contents')) open(deck, params.get('contents') || '')
+				// A search hit in another deck: jump to its slide once the course profile has removed its sections
+				resumePendingJump(deck, loadCourseProfile())
 			})
 		}
 	}
