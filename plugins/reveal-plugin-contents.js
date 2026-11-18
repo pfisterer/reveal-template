@@ -2,12 +2,12 @@
 	Contents overlay: a compact, scrollable summary of the whole lecture, i.e. the agenda with the level-1 and level-2 sections of every deck (their data-summary, collected into toc.json by dennis_build).
 
 	It covers the whole window like a page; key I opens and closes it, Escape or the close button closes it. ?contents in the URL opens it on load, also together with a course profile (e.g. index.html?profile=<id>&contents; the start page keeps the query when it redirects).
-	With a course profile (course-profile.js), decks and sections follow its status like the agenda and the menu: prior knowledge greyed out, optional in italics, skipped struck through (skipped decks without their sections).
+	With a course profile (course-profile.js), decks and sections follow its status like the agenda and the menu: prior knowledge greyed out, optional in italics, skipped struck through (skipped decks without their sections); statuses the profile hides ("display") are left out.
 	Every line links to its slide; links into the current deck jump there directly (skipped sections are removed from the deck, so slide numbers can differ from toc.json).
 	The search field above searches the text of all slides (search.json, search-core.js); while it is not empty, the hits replace the outline, grouped by deck in the order of the lecture. Skipped decks and sections of the course profile are left out. ?contents=<term> opens the overlay with a search; the quick navigation (key Q) hands its term over the same way.
  */
 
-import { loadCourseProfile, courseEntry, courseResetLink } from './course-profile.js'
+import { loadCourseProfile, courseEntry, courseHides, courseResetLink } from './course-profile.js'
 import { fromIndex, createSearch, searchHelpHtml, highlight, snippet, goTo, resumePendingJump } from './search-core.js'
 
 // Encode a relative path per segment
@@ -76,6 +76,7 @@ function render(toc, profile) {
 			if (!s.summary || s.level > 2) continue
 			const [title, note] = split(s.summary)
 			const status = marks.get(s.h)
+			if (courseHides(profile, status)) continue
 			const cls = status ? ` class="contents_${status}"` : ''
 			const href = `${encodePath(deck.path)}#/${s.h}${s.v ? '/' + s.v : ''}`
 			const attrs = `data-contents-deck="${escapeHtml(deck.slug)}" data-contents-summary="${escapeHtml(s.summary)}"`
@@ -94,6 +95,7 @@ function render(toc, profile) {
 
 	const deckBlock = (deck, isChapter) => {
 		const entry = deckStatus(deck)
+		if (courseHides(profile, entry.status)) return ''
 		const cls = profile ? ` contents_${entry.status}` : ''
 		const no = deck.sub ? `${deck.number}${deck.sub}` : (deck.number || '')
 		return `<div class="contents_deck${isChapter ? ' contents_chapter' : ''}${cls}">
@@ -107,20 +109,20 @@ function render(toc, profile) {
 
 	const outline = groups.map(g => `<div class="contents_group">${[g.chapter ? deckBlock(g.chapter, true) : '', ...g.decks.map(d => deckBlock(d, false))].join('')}</div>`).join('')
 	const course = profile
-		? `<div class="contents_course">${escapeHtml(profile.title)}<span class="contents_key contents_prior">prior knowledge</span><span class="contents_key contents_optional">optional</span><span class="contents_key contents_skip">not covered</span><a href="${courseResetLink()}">full contents</a></div>`
+		? `<div class="contents_course">${escapeHtml(profile.title)}${['prior', 'optional', 'skip'].filter(s => !courseHides(profile, s)).map(s => `<span class="contents_key contents_${s}">${{ prior: 'prior knowledge', optional: 'optional', skip: 'not covered' }[s]}</span>`).join('')}<a href="${courseResetLink()}">full contents</a></div>`
 		: ''
 	const search = '<input type="search" class="contents_search" placeholder="Search all slides" autocomplete="off" spellcheck="false" aria-label="Search all slides">'
 	return { head: `<div class="contents_head"><div class="contents_topline"><div class="contents_kicker">Contents</div><span class="contents_searchbox">${search}${searchHelpHtml()}</span></div><div class="contents_title">${escapeHtml(toc.title || '')}</div>${course}<button type="button" class="contents_close" title="Close (Esc)">&times;</button></div>`, outline }
 }
 
-// Documents of search.json that the course profile shows: no skipped decks, no skipped sections
+// Documents of search.json that the course profile shows: no skipped decks and sections, none the profile hides ("display")
 function visibleDocs(index, toc, profile) {
 	if (!profile) return index.docs
 	const hidden = new Map()
 	for (const deck of toc.decks) {
 		const entry = courseEntry(profile, 'decks', (deck.number || '') + (deck.sub || ''))
 		const marks = sectionStatus(deck.sections || [], entry.sections)
-		hidden.set(deck.slug, h => entry.status === 'skip' || marks.get(h) === 'skip')
+		hidden.set(deck.slug, h => entry.status === 'skip' || marks.get(h) === 'skip' || courseHides(profile, entry.status) || courseHides(profile, marks.get(h)))
 	}
 	return index.docs.filter(d => !(hidden.get(d.slug) || (() => false))(d.h))
 }

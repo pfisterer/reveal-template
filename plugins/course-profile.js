@@ -12,10 +12,13 @@
 			"04e": "skip",
 			"05b": { "status": "optional", "date": "2026-12-14" }
 		},
-		"exercises": { "<slide id of an exercise>": "optional" }
+		"exercises": { "<slide id of an exercise>": "optional" },
+		"display": { "prior": "hide", "skip": "hide" }
 	}
 
 	Deck keys are the number plus the sub letter of the deck ("04a", "05" for a chapter deck). Status: prior (prior knowledge), core (the default), optional, skip. "sections" in a deck entry marks parts of that deck by the data-name of their first slide (the name in the menu bar); a section ends at the next named slide of the same or a higher data-level. Skipped sections are removed from the presentation. Without a profile, nothing changes.
+	"display" separates the content (status) from what the course sees of it: per status "show" (the default: prior knowledge greyed out, optional in italics, skipped struck through or removed) or "hide" (decks and sections with that status are left out of the agenda, the contents overlay, the search, the presentation and the PDFs of the profile, so the course sees only its own agenda; the full agenda is one click away).
+	"prior": "hide" also removes sections marked prior from their deck, "skip": "hide" also drops skipped decks from the agenda instead of striking them through.
 	Used by reveal-plugin-show-toc.js (marks the agenda rows) and reveal-plugin-course-profile.js (badges on the title slide of a deck and on exercise slides).
  */
 
@@ -41,6 +44,17 @@ export function loadCourseProfile() {
 		.then(profile => profile ? Object.assign({ id, title: id }, profile) : null)
 		.catch(e => { console.log(`Unable to load course profile ${id}`, e); return null })
 	return profilePromise
+}
+
+// Display of each status in this profile ("display": { "<status>": "show" | "hide" }); core is always shown
+export function courseDisplay(profile) {
+	const display = (profile && profile.display) || {}
+	return Object.fromEntries(STATUSES.map(s => [s, s !== 'core' && display[s] === 'hide' ? 'hide' : 'show']))
+}
+
+// Whether the profile hides decks, sections and exercises with this status
+export function courseHides(profile, status) {
+	return !!profile && courseDisplay(profile)[status] === 'hide'
 }
 
 // Status and date of a deck ("decks") or an exercise ("exercises"); entries are either a status string or { status, date }

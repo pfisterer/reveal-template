@@ -13,10 +13,10 @@
 
 	<div data-toc-src="toc.json" style="font-size: 0.82em;" />
 
-	With a course profile (course-profile.js, start link ?profile=<id>), prior knowledge and skipped decks are muted, an extra column shows the date or "optional", and a legend below the table links to the full agenda. The footer links to the combined PDF (if there is one) and opens the contents overlay (reveal-plugin-contents.js).
+	With a course profile (course-profile.js, start link ?profile=<id>), prior knowledge and skipped decks are muted (or left out, if the profile hides them with "display"), an extra column shows the date or "optional", and a legend below the table links to the full agenda. The footer links to the combined PDF (if there is one) and opens the contents overlay (reveal-plugin-contents.js).
  */
 
-import { loadCourseProfile, courseEntry, formatCourseDate, courseResetLink } from './course-profile.js'
+import { loadCourseProfile, courseEntry, courseHides, formatCourseDate, courseResetLink } from './course-profile.js'
 
 import printerSymbolUrl from '../img/printer-symbol.svg?url'
 import pdfSymbolUrl from '../img/pdf-symbol.svg?url'
@@ -27,9 +27,11 @@ function encodePath(p) {
 }
 
 function renderToc(toc, profile) {
-	// One group per chapter (a deck without sub letter) with its sub-chapters; with more than 10 entries the groups flow into two columns
+	// One group per chapter (a deck without sub letter) with its sub-chapters; with more than 11 entries the groups flow into two columns
+	// Decks whose status the profile hides ("display") are left out
+	const decks = toc.decks.filter(deck => !courseHides(profile, courseEntry(profile, 'decks', (deck.number || '') + (deck.sub || '')).status))
 	const groups = []
-	for (const deck of toc.decks) {
+	for (const deck of decks) {
 		if (!deck.sub || groups.length === 0) groups.push([])
 		groups[groups.length - 1].push(deck)
 	}
@@ -57,15 +59,15 @@ function renderToc(toc, profile) {
 			</div>`
 	}
 
-	// With more than 10 entries the chapters go into two columns, split where both have about the same number of rows; the first group of each column has no line above it (the slide title already has one)
+	// With more than 11 entries the chapters go into two columns, split where both have about the same number of rows; the first group of each column has no line above it (the slide title already has one)
 	const group = g => `<div class="toc_group">${g.map(row).join('')}</div>`
 	let body = groups.map(group).join('')
 	let columns = ''
-	if (toc.decks.length > 10 && groups.length > 1) {
+	if (decks.length > 11 && groups.length > 1) {
 		let best = 1, bestDiff = Infinity, left = 0
 		for (let i = 1; i < groups.length; i++) {
 			left += groups[i - 1].length
-			const diff = Math.abs(2 * left - toc.decks.length)
+			const diff = Math.abs(2 * left - decks.length)
 			if (diff < bestDiff) { best = i; bestDiff = diff }
 		}
 		body = `<div class="toc_col">${groups.slice(0, best).map(group).join('')}</div><div class="toc_col">${groups.slice(best).map(group).join('')}</div>`
@@ -81,7 +83,7 @@ function renderToc(toc, profile) {
 		: ''
 	const contents = `<a class="toc_combined" href="?contents" data-open-contents title="Contents of all chapters (key I)"><i class="fa-solid fa-list-ul" aria-hidden="true"></i>Contents of all chapters</a>`
 	const legend = profile
-		? `<span class="toc_course_legend"><span class="toc_course_key toc_course_key_prior"></span>prior knowledge<span class="toc_course_key toc_course_key_skip">not covered</span><a href="${courseResetLink()}">full agenda</a></span>`
+		? `<span class="toc_course_legend">${courseHides(profile, 'prior') ? '' : '<span class="toc_course_key toc_course_key_prior"></span>prior knowledge'}${courseHides(profile, 'skip') ? '' : '<span class="toc_course_key toc_course_key_skip">not covered</span>'}<a href="${courseResetLink()}">full agenda</a></span>`
 		: ''
 	const footer = `<div class="toc_footer"><span class="toc_footer_links">${contents}${combined}</span>${legend}</div>`
 

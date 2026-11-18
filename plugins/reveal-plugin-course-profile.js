@@ -4,7 +4,7 @@
 	Key U opens a picker with the profiles listed in toc.json (built from profiles/*.json) and "Full agenda" (no profile).
  */
 
-import { loadCourseProfile, courseEntry, formatCourseDate, STATUS_LABELS, activeCourseProfileId, switchCourseProfile } from './course-profile.js'
+import { loadCourseProfile, courseEntry, courseHides, formatCourseDate, STATUS_LABELS, activeCourseProfileId, switchCourseProfile } from './course-profile.js'
 
 function badge(profile, entry) {
 	const parts = [STATUS_LABELS[entry.status], formatCourseDate(entry.date)].filter(Boolean)
@@ -40,7 +40,8 @@ function markSections(deck, profile, sections) {
 			statusOf.set(i, entry.status)
 		}
 	})
-	const removed = new Set([...statusOf].filter(([, s]) => s === 'skip').map(([h]) => h))
+	// removed: skipped sections and those whose status the profile hides ("display", e.g. prior knowledge)
+	const removed = new Set([...statusOf].filter(([, s]) => s === 'skip' || courseHides(profile, s)).map(([h]) => h))
 
 	// Old index of a link target ("#/12", "#/12/3" or "#/<id>") and its new index after the removal
 	const indexOf = href => {

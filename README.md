@@ -86,7 +86,8 @@ One lecture site can serve several courses with different agendas. A start link 
 {
   "title": "WDSKI24",
   "decks": { "03f": "prior", "04b": { "status": "core", "date": "2026-11-23" }, "04d": { "status": "core", "sections": { "Access Control": "skip", "Supply Chain": "optional" } }, "04e": "skip", "05b": { "status": "optional", "date": "2026-12-14" } },
-  "exercises": { "tilt": "optional", "keycloak": "skip" }
+  "exercises": { "tilt": "optional", "keycloak": "skip" },
+  "display": { "prior": "hide", "skip": "hide" }
 }
 ```
 
@@ -94,7 +95,9 @@ Deck keys are number plus sub letter (`04a`, `05` for a chapter deck), exercise 
 
 `sections` in a deck entry restricts a deck to some of its parts: keys are the `data-name` of the first slide of a section (the name in the menu bar, numbered like `Exercise 2` when it occurs several times), a section ends at the next named slide of the same or a higher `data-level`. A section with `skip` is removed from the presentation (slides, menu item, chapter overview lines; slide numbers count without it). With `prior` or `optional` every slide of the section gets the badge, its menu item and its chapter overview lines are greyed out (`prior`) or set in italics (`optional`).
 
-PDFs per profile: for every deck with skipped sections, `dennis_build` writes a print variant `<slug>-print-<profile>.html` without them (prerendered, so the chapter overview and the slide numbers match the profile view), listed in `toc.json` under `decks[].profiles` (`{ "<profile>": { "printPath", "pdf" } }`, or `{ "skip": true }` for a skipped deck) together with `profiles[].pdfDir` and `profiles[].combinedPdfFile`. The CI renders these variants to `pdfs/<profile>/<slug>.pdf` and merges a combined PDF per profile (without skipped decks); all other decks use their normal PDF, `prior` and `optional` are not marked in print. With an active profile, the agenda links the variants and the combined PDF of the profile.
+`display` separates what a course sees from the status of the content: per status `show` (default, the marks above) or `hide`. A hidden status is left out entirely: decks and sections with it disappear from the agenda, the contents overlay, the search, the presentation (sections are removed like `skip`) and the print variants and PDFs of the profile, so the course sees only its own agenda, while "full agenda" (`?profile=none`) still shows everything. `"prior": "hide"` suits a course that continues another one, `"skip": "hide"` drops skipped decks instead of striking them through. Status keeps the content decision (what the course knows, what is left out), `display` only how it is shown.
+
+PDFs per profile: for every deck with skipped sections (or sections whose status the profile hides), `dennis_build` writes a print variant `<slug>-print-<profile>.html` without them (prerendered, so the chapter overview and the slide numbers match the profile view), listed in `toc.json` under `decks[].profiles` (`{ "<profile>": { "printPath", "pdf" } }`, or `{ "skip": true }` for a skipped deck) together with `profiles[].pdfDir` and `profiles[].combinedPdfFile`. The CI renders these variants to `pdfs/<profile>/<slug>.pdf` and merges a combined PDF per profile (without skipped decks and decks it hides); all other decks use their normal PDF, `prior` and `optional` are not marked in print. With an active profile, the agenda links the variants and the combined PDF of the profile.
 
 The key `U` opens a picker with all profiles (the build lists `profiles/*.json` with their titles in `toc.json`) and "Full agenda"; choosing one sets it like a start link and reloads the page.
 

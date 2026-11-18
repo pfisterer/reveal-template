@@ -120,13 +120,14 @@ async function prerenderDecks(decks, pkg) {
 		slides.set(deck.slug, slidesHtml)
 		deck.sections = sections
 		deck.searchDocs = searchDocs
-		// Print variants of the course profiles: a deck the profile skips gets none (left out of its PDFs), a deck with skipped sections gets its own print page without them; prior and optional change nothing in print
+		// Print variants of the course profiles: a deck the profile skips or hides ("display") gets none (left out of its PDFs), a deck with such sections gets its own print page without them; statuses the profile shows change nothing in print
 		deck.profiles = {}
 		for (const profile of profiles) {
+			const hidden = hiddenStatuses(profile)
 			const value = (profile.decks || {})[(deck.number || '') + (deck.sub || '')]
 			const entry = typeof value === 'string' ? { status: value } : (value || {})
-			if (entry.status === 'skip') { deck.profiles[profile.id] = { skip: true }; continue }
-			const skipSections = entry.sections || {}
+			if (hidden.has(entry.status)) { deck.profiles[profile.id] = { skip: true }; continue }
+			const skipSections = Object.fromEntries(Object.entries(entry.sections || {}).map(([name, status]) => [name, hidden.has(status) ? 'skip' : status]))
 			if (!Object.values(skipSections).includes('skip')) continue
 			const printPath = `${deck.printPath}-${profile.id}`
 			const variant = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles, skipSections })
@@ -135,6 +136,12 @@ async function prerenderDecks(decks, pkg) {
 		}
 	}
 	return slides
+}
+
+// Statuses a course profile leaves out of its print pages and PDFs: skip, plus those it hides with "display" (see plugins/course-profile.js)
+function hiddenStatuses(profile) {
+	const display = profile.display || {}
+	return new Set(['skip', ...['prior', 'optional'].filter(s => display[s] === 'hide')])
 }
 
 // Pages of a deck: the presentation, the print page, and the print variants of the course profiles
