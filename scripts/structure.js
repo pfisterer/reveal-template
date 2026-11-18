@@ -137,8 +137,35 @@ function numberDuplicateNames(container) {
 	}
 }
 
+// Print variant of a course profile (profiles/<id>.json): removes the sections the profile skips, by the same rule as reveal-plugin-course-profile.js in the browser. sections is the "sections" object of the deck entry ({ "<data-name>": status }); a section runs from its named slide to the next named slide of the same or a higher level, or to the next slide named in sections. Names are numbered first ("Exercise 2"), as in the menu bar the profile refers to.
+function removeSkippedSections(container, sections) {
+	const names = Object.keys(sections || {})
+	if (!names.some(n => sections[n] === 'skip')) return
+	numberDuplicateNames(container)
+	const stacks = [...container.children].filter(c => c.tagName === 'SECTION')
+	const info = stack => {
+		const first = stack.querySelector(':scope > section') || stack
+		const name = stack.getAttribute('data-name') || first.getAttribute('data-name')
+		const level = parseInt(stack.getAttribute('data-level') || first.getAttribute('data-level') || '1', 10) || 1
+		return { name, level }
+	}
+	const removed = new Set()
+	stacks.forEach((stack, h) => {
+		const { name, level } = info(stack)
+		if (!name || sections[name] !== 'skip') return
+		for (let i = h; i < stacks.length; i++) {
+			const next = info(stacks[i])
+			if (i > h && next.name && (next.level <= level || names.includes(next.name))) break
+			removed.add(stacks[i])
+		}
+	})
+	for (const stack of removed) stack.remove()
+}
+
 // codeFiles: { root, assetExclude } of the lecture repo; without it no file trees are built
-function addStructure(container, { file, root, assetExclude } = {}) {
+// skipSections: the "sections" of a course profile for a print variant (removeSkippedSections), removed before the chapter overview is built
+function addStructure(container, { file, root, assetExclude, skipSections } = {}) {
+	removeSkippedSections(container, skipSections)
 	if (root) addCodeFileTrees(container, { root, assetExclude, file })
 	addChapterOverviews(container)
 	numberDuplicateNames(container)

@@ -28,7 +28,7 @@ async function loadRevealMarkdown() {
 // Render one deck's markdown to reveal <section> HTML.
 // markdownConfig is what deck.getConfig().markdown returns at runtime
 // (default { smartypants: true }, overridable via pkg.farberg.markdown).
-async function prerenderDeck(md, { file, markdownConfig, codeFiles }) {
+async function prerenderDeck(md, { file, markdownConfig, codeFiles, skipSections }) {
 	const RevealMarkdown = await loadRevealMarkdown()
 
 	const dom = new JSDOM('<!DOCTYPE html><html><body><div class="slides"></div></body></html>')
@@ -56,7 +56,7 @@ async function prerenderDeck(md, { file, markdownConfig, codeFiles }) {
 			getRevealElement: () => container,
 			getConfig: () => ({ markdown: markdownConfig })
 		})
-		addStructure(container, Object.assign({ file }, codeFiles))
+		addStructure(container, Object.assign({ file, skipSections }, codeFiles))
 		const sections = collectSections(container)
 		const searchDocs = collectSearchDocs(container)
 		return { slidesHtml: container.innerHTML, sections, searchDocs }

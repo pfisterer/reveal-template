@@ -12,11 +12,12 @@
 //   index.html                       redirect to the first deck (keeps ?query and #hash, e.g. ?profile=)
 //   <slug>.html                      one page per markdown deck, markdown inlined
 //   <slug>-print.html                print variant (Reveal view: 'print')
+//   <slug>-print-<profile>.html      print variant of a course profile without the sections it skips (only decks that have such sections)
 //   assets/                          hashed JS/CSS/fonts (Vite output)
 //   toc.json                         machine-readable table of contents
 //   search.json                      slide texts for the full-text search (key I)
 //   img/ code/ data/                 copied as-is (mtimes preserved for rsync)
-//   pdfs/                            filled by CI (Gotenberg), referenced in toc.json
+//   pdfs/                            filled by CI (Gotenberg), referenced in toc.json; pdfs/<profile>/ the PDFs of a course profile
 
 const path = require('path')
 const fs = require('fs')
@@ -110,15 +111,35 @@ function deckHtml(template, { deck, info, view }) {
 // Returns Map(slug -> slidesHtml); the sections of each deck (for toc.json) are stored on the deck object.
 async function prerenderDecks(decks, pkg) {
 	const markdownConfig = Object.assign({ smartypants: true }, (pkg.farberg || {}).markdown)
+	const codeFiles = { root: cwd, assetExclude: assetConfig(pkg).assetExclude }
+	const profiles = loadProfiles()
 	const slides = new Map()
 	for (const deck of decks) {
 		const md = fs.readFileSync(path.join(cwd, deck.file), 'utf8')
-		const { slidesHtml, sections, searchDocs } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles: { root: cwd, assetExclude: assetConfig(pkg).assetExclude } })
+		const { slidesHtml, sections, searchDocs } = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles })
 		slides.set(deck.slug, slidesHtml)
 		deck.sections = sections
 		deck.searchDocs = searchDocs
+		// Print variants of the course profiles: a deck the profile skips gets none (left out of its PDFs), a deck with skipped sections gets its own print page without them; prior and optional change nothing in print
+		deck.profiles = {}
+		for (const profile of profiles) {
+			const value = (profile.decks || {})[(deck.number || '') + (deck.sub || '')]
+			const entry = typeof value === 'string' ? { status: value } : (value || {})
+			if (entry.status === 'skip') { deck.profiles[profile.id] = { skip: true }; continue }
+			const skipSections = entry.sections || {}
+			if (!Object.values(skipSections).includes('skip')) continue
+			const printPath = `${deck.printPath}-${profile.id}`
+			const variant = await prerenderDeck(md, { file: deck.file, markdownConfig, codeFiles, skipSections })
+			slides.set(printPath, variant.slidesHtml)
+			deck.profiles[profile.id] = { printPath }
+		}
 	}
 	return slides
+}
+
+// Pages of a deck: the presentation, the print page, and the print variants of the course profiles
+function deckPages(deck) {
+	return [deck.slug, deck.printPath, ...Object.values(deck.profiles || {}).map(p => p.printPath).filter(Boolean)]
 }
 
 // Injects the prerendered slides AFTER Vite's asset scanning (order: 'post'),
@@ -132,9 +153,10 @@ function injectSlidesPlugin(getState) {
 			handler(html, ctx) {
 				const { decks, slides } = getState()
 				const page = path.basename(ctx.filename || ctx.path || '', '.html')
-				const deck = decks.find(d => d.slug === page || d.printPath === page)
+				const deck = decks.find(d => deckPages(d).includes(page))
 				if (!deck) return html
-				const slidesHtml = slides.get(deck.slug)
+				// a print variant of a course profile has its own slides, the print page those of the deck
+				const slidesHtml = slides.get(page) || slides.get(deck.slug)
 				if (!slidesHtml) return html
 				// function replacement: slide HTML may contain $-sequences
 				return html.replace(SLIDES_PLACEHOLDER, () => slidesHtml)
@@ -170,6 +192,8 @@ async function generateStaging(decks, pkg) {
 	for (const deck of decks) {
 		fs.writeFileSync(path.join(stagingDir, `${deck.slug}.html`), deckHtml(template, { deck, info, view: 'presentation' }))
 		fs.writeFileSync(path.join(stagingDir, `${deck.printPath}.html`), deckHtml(template, { deck, info, view: 'print' }))
+		for (const variant of Object.values(deck.profiles || {}))
+			if (variant.printPath) fs.writeFileSync(path.join(stagingDir, `${variant.printPath}.html`), deckHtml(template, { deck, info, view: 'print' }))
 	}
 
 	fs.writeFileSync(path.join(stagingDir, 'index.html'), redirectHtml(decks[0].slug))
@@ -191,15 +215,35 @@ async function generateStaging(decks, pkg) {
 	return { decks, slides }
 }
 
-// Course profiles in profiles/<id>.json (see plugins/course-profile.js), listed in toc.json for the profile picker (key U)
-function courseProfiles() {
+// Course profiles in profiles/<id>.json (see plugins/course-profile.js), with their content
+function loadProfiles() {
 	const dir = path.join(cwd, 'profiles')
 	if (!fs.existsSync(dir)) return []
 	return fs.readdirSync(dir).filter(f => /^[A-Za-z0-9_-]+\.json$/.test(f)).sort().map(f => {
 		const id = f.replace(/\.json$/, '')
-		try { return { id, title: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')).title || id } }
+		try { return Object.assign({ title: id }, JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')), { id }) }
 		catch (e) { console.warn(`profiles/${f}: ${e.message}`); return null }
 	}).filter(Boolean)
+}
+
+// The profiles in toc.json: for the profile picker (key U), and the PDFs of each profile in pdfs/<id>/ (CI): the combined PDF of the profile is named like the full one plus the profile title
+function courseProfiles(pkg) {
+	return loadProfiles().map(({ id, title }) => {
+		const combinedPdfFile = combined_pdf(pkg).replace(/\.pdf$/, ` - ${title.replace(/[\/\\:]/g, '-')}.pdf`)
+		const combinedExists = fs.existsSync(path.join(pdfDir, id, combinedPdfFile))
+		return { id, title, pdfDir: `pdfs/${id}`, combinedPdfFile, combinedPdf: combinedExists ? `pdfs/${id}/${combinedPdfFile}` : null }
+	})
+}
+
+// Variants of a deck in toc.json: { <id>: { skip: true } } or { <id>: { printPath, pdf } } (pdf: the link if pdfs/<id>/<slug>.pdf is up to date)
+function deckProfiles(d) {
+	const out = {}
+	for (const [id, v] of Object.entries(d.profiles || {})) {
+		if (v.skip) { out[id] = { skip: true }; continue }
+		const pdf = path.join(pdfDir, id, `${d.slug}.pdf`)
+		out[id] = { printPath: v.printPath, pdf: pdf_exists_and_is_newer_than_markdown(path.join(cwd, d.file), pdf, false) ? `pdfs/${id}/${d.slug}.pdf` : null }
+	}
+	return out
 }
 
 function buildToc(decks, pkg) {
@@ -210,7 +254,7 @@ function buildToc(decks, pkg) {
 		generated: new Date().toISOString(),
 		title: pkg.title,
 		combinedPdf: combinedExists ? `pdfs/${combinedPdfName}` : null,
-		profiles: courseProfiles(),
+		profiles: courseProfiles(pkg),
 		decks: decks.map(d => ({
 			order: d.order,
 			file: d.file,
@@ -221,6 +265,7 @@ function buildToc(decks, pkg) {
 			path: d.path,
 			printPath: d.printPath,
 			sections: d.sections || [],
+			profiles: deckProfiles(d),
 			pdf: pdf_exists_and_is_newer_than_markdown(path.join(cwd, d.file), path.join(pdfDir, `${d.slug}.pdf`), false)
 				? `pdfs/${d.slug}.pdf`
 				: null
@@ -248,10 +293,8 @@ function writeTocJson(decks, pkg) {
 async function viteBuild(decks, slides) {
 	const vite = await import('vite')
 	const input = { index: path.join(stagingDir, 'index.html') }
-	for (const d of decks) {
-		input[d.slug] = path.join(stagingDir, `${d.slug}.html`)
-		input[d.printPath] = path.join(stagingDir, `${d.printPath}.html`)
-	}
+	for (const d of decks)
+		for (const page of deckPages(d)) input[page] = path.join(stagingDir, `${page}.html`)
 	await vite.build({
 		root: stagingDir,
 		base: './',
@@ -352,7 +395,11 @@ function tocOnly() {
 	// The sections come from prerendering: keep the ones of the last full build
 	try {
 		const old = JSON.parse(fs.readFileSync(path.join(distDir, 'toc.json'), 'utf8'))
-		for (const d of decks) d.sections = ((old.decks || []).find(o => o.slug === d.slug) || {}).sections
+		for (const d of decks) {
+			const o = (old.decks || []).find(o => o.slug === d.slug) || {}
+			d.sections = o.sections
+			d.profiles = o.profiles
+		}
 	} catch (e) { }
 	writeTocJson(decks, pkg)
 	console.log('toc.json updated.')
@@ -410,7 +457,7 @@ async function devServer() {
 
 	const pkg = readPackageJson()
 	let { decks, slides } = await generateStaging(scanDecks(), pkg)
-	let routes = new Set(decks.flatMap(d => [d.slug, d.printPath]))
+	let routes = new Set(decks.flatMap(deckPages))
 	const { assetDirs } = assetConfig(pkg)
 
 	const templateRealDir = fs.realpathSync(path.resolve(__dirname, '..'))
@@ -454,7 +501,7 @@ async function devServer() {
 		generateStaging(scanDecks(), readPackageJson()).then(result => {
 			decks = result.decks
 			slides = result.slides
-			routes = new Set(decks.flatMap(d => [d.slug, d.printPath]))
+			routes = new Set(decks.flatMap(deckPages))
 			server.ws.send({ type: 'full-reload' })
 			console.log(`Regenerated after change in ${rel}`)
 		}).catch(e => console.error(e))

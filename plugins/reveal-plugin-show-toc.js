@@ -42,8 +42,12 @@ function renderToc(toc, profile) {
 		const plan = !profile ? '' : entry.status === 'optional'
 			? ['optional', formatCourseDate(entry.date)].filter(Boolean).join(', ')
 			: (entry.status === 'core' ? formatCourseDate(entry.date) : '')
-		const print = `<a href='${encodePath(deck.printPath)}' title="Print version"><img src="${printerSymbolUrl}" alt="Print"></a>`
-		const pdf = deck.pdf ? `<a href='${encodePath(deck.pdf)}' title="PDF"><img src="${pdfSymbolUrl}" alt="PDF"></a>` : ''
+		// With a course profile, a deck with skipped sections links its print variant and PDF without them (dennis_build, CI)
+		const variant = (profile && (deck.profiles || {})[profile.id]) || {}
+		const printPath = variant.printPath || deck.printPath
+		const pdfPath = variant.printPath ? variant.pdf : deck.pdf
+		const print = `<a href='${encodePath(printPath)}' title="Print version"><img src="${printerSymbolUrl}" alt="Print"></a>`
+		const pdf = pdfPath ? `<a href='${encodePath(pdfPath)}' title="PDF"><img src="${pdfSymbolUrl}" alt="PDF"></a>` : ''
 		return `
 			<div class="toc_row ${isSub ? 'toc_row_sub' : 'toc_row_chapter'}${status}">
 				<span class="toc_no">${isSub ? deck.sub : (deck.number || '')}</span>
@@ -69,8 +73,11 @@ function renderToc(toc, profile) {
 	}
 
 	// Footer: the contents overlay (reveal-plugin-contents.js, also key I) and the combined PDF on the left, the legend of the course profile on the right
-	const combined = toc.combinedPdf
-		? `<a class="toc_combined" href='${encodePath(toc.combinedPdf)}'><img src="${pdfSymbolUrl}" alt="">All slides as one PDF</a>`
+	// With a course profile its own combined PDF (without skipped decks and sections), if the CI has built it
+	const profileInfo = profile && (toc.profiles || []).find(p => p.id === profile.id)
+	const combinedPdf = (profileInfo && profileInfo.combinedPdf) || toc.combinedPdf
+	const combined = combinedPdf
+		? `<a class="toc_combined" href='${encodePath(combinedPdf)}'><img src="${pdfSymbolUrl}" alt="">All slides as one PDF</a>`
 		: ''
 	const contents = `<a class="toc_combined" href="?contents" data-open-contents title="Contents of all chapters (key I)"><i class="fa-solid fa-list-ul" aria-hidden="true"></i>Contents of all chapters</a>`
 	const legend = profile

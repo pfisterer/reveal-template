@@ -94,6 +94,8 @@ Deck keys are number plus sub letter (`04a`, `05` for a chapter deck), exercise 
 
 `sections` in a deck entry restricts a deck to some of its parts: keys are the `data-name` of the first slide of a section (the name in the menu bar, numbered like `Exercise 2` when it occurs several times), a section ends at the next named slide of the same or a higher `data-level`. A section with `skip` is removed from the presentation (slides, menu item, chapter overview lines; slide numbers count without it). With `prior` or `optional` every slide of the section gets the badge, its menu item and its chapter overview lines are greyed out (`prior`) or set in italics (`optional`).
 
+PDFs per profile: for every deck with skipped sections, `dennis_build` writes a print variant `<slug>-print-<profile>.html` without them (prerendered, so the chapter overview and the slide numbers match the profile view), listed in `toc.json` under `decks[].profiles` (`{ "<profile>": { "printPath", "pdf" } }`, or `{ "skip": true }` for a skipped deck) together with `profiles[].pdfDir` and `profiles[].combinedPdfFile`. The CI renders these variants to `pdfs/<profile>/<slug>.pdf` and merges a combined PDF per profile (without skipped decks); all other decks use their normal PDF, `prior` and `optional` are not marked in print. With an active profile, the agenda links the variants and the combined PDF of the profile.
+
 The key `U` opens a picker with all profiles (the build lists `profiles/*.json` with their titles in `toc.json`) and "Full agenda"; choosing one sets it like a start link and reloads the page.
 
 ## Contents Overlay (`I`, `?contents`)
