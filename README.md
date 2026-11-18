@@ -119,9 +119,10 @@ To develop on this repository:
 
 ## Publish a new version (maintainers only)
 
-```bash
-# Bump version in `package.json`
+Bump the version in `package.json` (e.g. `npm version patch --no-git-tag-version`), then publish to npm:
 
-# Run this command to publish on npm
-npm login && sleep 3s && npm publish --access public
+```bash
+npm run release
 ```
+
+`release` logs in to npm only if `npm whoami` shows no active session, then runs `npm publish --access public`. The script is deliberately not named `publish`, because npm would run a script of that name as a lifecycle hook after every `npm publish`.
